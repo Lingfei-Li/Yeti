@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  YetiTransactionsTableName:
+    Description: The name of the main transactions table
+    Type: String
+
+Resources:
+  YetiApiLoadAllTransactions:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-LoadAllTransactions
+      Handler: src/yetiApi.load_all_transactions
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        LoadAllTransactions:
+          Type: Api
+          Properties:
+            Path: /transactions
+            Method: get
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          YETI_TRANSACTIONS_TABLE:
+            Ref: YetiTransactionsTableName
+
+  YetiTransactionsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName:
+        Ref: YetiTransactionsTableName
+      AttributeDefinitions:
+        - AttributeName: "PaymentId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "PaymentId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+
+
