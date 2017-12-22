@@ -3,9 +3,7 @@ import json
 import shutil
 import os.path
 from colorama import init, Fore
-
-with open('../config/cloudformation_config.json') as config_file:
-    config = json.load(config_file)
+from src.cloudformation_config import config
 
 init()
 

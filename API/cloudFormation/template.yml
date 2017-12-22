@@ -7,19 +7,57 @@ Parameters:
     Type: String
 
 Resources:
-  YetiApiLoadAllTransactions:
+  YetiApiLoadTransactions:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: YetiApi-LoadAllTransactions
-      Handler: src/yetiApi.load_all_transactions
+      FunctionName: YetiApi-LoadTransactions
+      Handler: src/yeti_api.load_transactions
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        LoadTransactions:
+          Type: Api
+          Properties:
+            Path: /transactions
+            Method: get
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          YETI_TRANSACTIONS_TABLE:
+            Ref: YetiTransactionsTableName
+  YetiApiSearchTransactions:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-SearchTransactions
+      Handler: src/yeti_api.search_transactions
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        SearchTransactions:
+          Type: Api
+          Properties:
+            Path: /transactions/search
+            Method: post
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          YETI_TRANSACTIONS_TABLE:
+            Ref: YetiTransactionsTableName
+  YetiApiCloseTransaction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-CloseTransaction
+      Handler: src/yeti_api.close_transaction
       Timeout: 10
       Runtime: python3.6
       Events:
         LoadAllTransactions:
           Type: Api
           Properties:
-            Path: /transactions
-            Method: get
+            Path: /transactions/close/{transactionId}
+            Method: put
       Policies:
         - AmazonDynamoDBFullAccess
       Environment:
@@ -33,13 +71,41 @@ Resources:
       TableName:
         Ref: YetiTransactionsTableName
       AttributeDefinitions:
-        - AttributeName: "PaymentId"
+        - AttributeName: "TransactionId"
+          AttributeType: "S"
+        - AttributeName: "SenderFirstName"
+          AttributeType: "S"
+        - AttributeName: "SenderLastName"
+          AttributeType: "S"
+        - AttributeName: "SenderEmail"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "PaymentId"
+        - AttributeName: "TransactionId"
           KeyType: "HASH"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
+      GlobalSecondaryIndexes:
+        - IndexName: "TransactionsBySenderNameIndex"
+          KeySchema:
+            - AttributeName: "SenderFirstName"
+              KeyType: "HASH"
+            - AttributeName: "SenderLastName"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: "3"
+            WriteCapacityUnits: "3"
+        - IndexName: "TransactionsBySenderEmailIndex"
+          KeySchema:
+            - AttributeName: "SenderEmail"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: "3"
+            WriteCapacityUnits: "3"
+
 
 

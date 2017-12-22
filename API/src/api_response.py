@@ -1,8 +1,4 @@
-import logging
 import json
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 CORS_HEADERS = {
     "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
@@ -11,13 +7,21 @@ CORS_HEADERS = {
 }
 
 
-def load_all_transactions(event, context):
-    logger.info(event)
+def ok(data):
+    return response(200, data)
+
+
+def client_error(error):
+    return response(400, error)
+
+
+def internal_error(error):
+    return response(500, error)
+
+
+def response(status_code, data):
     return {
-        'statusCode': 200,
+        'statusCode': status_code,
         'headers': CORS_HEADERS,
-        'body': json.dumps({
-            'message': "hello",
-            'event': json.dumps(event)
-        })
+        'body': json.dumps(data)
     }

@@ -1,4 +1,4 @@
-{
+config = {
   "YetiTransactionsTableName": "ProjectYeti-Transactions",
   "DeploymentBucketName": "project-yeti-deployment",
   "StackName": "ProjectYeti",
