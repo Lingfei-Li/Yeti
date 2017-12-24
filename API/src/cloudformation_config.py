@@ -1,5 +1,7 @@
 config = {
   "YetiTransactionsTableName": "ProjectYeti-Transactions",
+  "YetiLoginsTableName": "ProjectYeti-Logins",
+  "YetiDevicesTableName": "ProjectYeti-Devices",
   "DeploymentBucketName": "project-yeti-deployment",
   "StackName": "ProjectYeti",
   "SourceDir": "src",

@@ -27,7 +27,10 @@ try:
     subprocess.run(["deploymentScripts\deploy.bat",
                     outputTemplatePath,
                     config["StackName"],
-                    config["YetiTransactionsTableName"]], shell=True, check=True)
+                    config["YetiTransactionsTableName"],
+                    config["YetiLoginsTableName"],
+                    config["YetiDevicesTableName"]],
+                   shell=True, check=True)
     # subprocess.run(["deploymentScripts\clean.bat",
     #                 config["DeploymentBucketName"]], shell=True, check=True)
 

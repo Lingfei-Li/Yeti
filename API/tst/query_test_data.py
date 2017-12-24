@@ -1,10 +1,6 @@
-import json
 import pprint
 from src import dynamodb
 from boto3.dynamodb.conditions import Key
-
-with open('../../config/cloudformation_config.py') as config_file:
-    config = json.load(config_file)
 
 pp = pprint.PrettyPrinter(indent=2)
 

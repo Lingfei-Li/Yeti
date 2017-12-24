@@ -5,6 +5,12 @@ Parameters:
   YetiTransactionsTableName:
     Description: The name of the main transactions table
     Type: String
+  YetiLoginsTableName:
+    Description: The name of the logins information table
+    Type: String
+  YetiDevicesTableName:
+    Description: The name of the devices information table
+    Type: String
 
 Resources:
   YetiApiLoadTransactions:
@@ -20,25 +26,6 @@ Resources:
           Properties:
             Path: /transactions
             Method: get
-      Policies:
-        - AmazonDynamoDBFullAccess
-      Environment:
-        Variables:
-          YETI_TRANSACTIONS_TABLE:
-            Ref: YetiTransactionsTableName
-  YetiApiSearchTransactions:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-SearchTransactions
-      Handler: src/yeti_api.search_transactions
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        SearchTransactions:
-          Type: Api
-          Properties:
-            Path: /transactions/search
-            Method: post
       Policies:
         - AmazonDynamoDBFullAccess
       Environment:
@@ -64,6 +51,29 @@ Resources:
         Variables:
           YETI_TRANSACTIONS_TABLE:
             Ref: YetiTransactionsTableName
+  YetiApiLogin:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-Login
+      Handler: src/yeti_api.login
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        LoadAllTransactions:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: post
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          YETI_TRANSACTIONS_TABLE:
+            Ref: YetiTransactionsTableName
+          YETI_LOGINS_TABLE:
+            Ref: YetiLoginsTableName
+          YETI_DEVICES_TABLE:
+            Ref: YetiDevicesTableName
 
   YetiTransactionsTable:
     Type: "AWS::DynamoDB::Table"
@@ -106,6 +116,31 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: "3"
             WriteCapacityUnits: "3"
-
-
-
+  YetiLoginsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName:
+        Ref: YetiLoginsTableName
+      AttributeDefinitions:
+        - AttributeName: "Email"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "Email"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+  YetiDevicesTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName:
+        Ref: YetiDevicesTableName
+      AttributeDefinitions:
+        - AttributeName: "DeviceId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "DeviceId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"

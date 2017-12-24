@@ -1,17 +1,21 @@
 import json
 from src import dynamodb
+from tst.test_data import transactions, logins
 
-with open('./test_data.json') as test_data_file:
-    test_data = json.load(test_data_file)
-
-for item in test_data:
-    print("Data:", json.dumps(test_data))
+for item in transactions:
+    print("Data:", json.dumps(transactions))
     response = dynamodb.transactions_table.put_item(
         Item=item
     )
     print(response)
 
 
+for item in logins:
+    print("Data:", json.dumps(logins))
+    response = dynamodb.logins_table.put_item(
+        Item=item
+    )
+    print(response)
 
 
 

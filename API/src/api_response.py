@@ -8,15 +8,25 @@ CORS_HEADERS = {
 
 
 def ok(data):
-    return response(200, data)
+    return response(200, json.dumps(data))
 
 
-def client_error(error):
-    return response(400, error)
+def ok_no_data(message):
+    return response(200, {
+        "message": message
+    })
 
 
-def internal_error(error):
-    return response(500, error)
+def client_error(error_msg):
+    return response(400, {
+        'error': error_msg
+    })
+
+
+def internal_error(error_msg):
+    return response(500, {
+        'error': error_msg
+    })
 
 
 def response(status_code, data):

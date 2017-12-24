@@ -1,4 +1,4 @@
-[
+transactions = [
   {
     "TransactionId": "payment-100",
     "Amount": 59,
@@ -70,3 +70,10 @@
     "SerializedUpdateHistory": "[]"
   }
 ]
+
+logins = [{
+  'Email': 'skitickets@amazon.com',
+  'PasswordSHA256': '12345',
+  'SerializedLoginHistory': "[]",
+  'AllowedDevices': []
+}]
