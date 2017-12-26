@@ -18,11 +18,11 @@ class AuthVerifyResult:
         self.token = token
         self.data = data
 
+
 secret = 'secret'
 
 
 class Authorizer:
-
     @staticmethod
     def verify_email_password(login_email, password_sha256):
         try:
@@ -56,3 +56,4 @@ class Authorizer:
         except jwt.DecodeError:
             return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_invalid, message="Token validation failed")
         return AuthVerifyResult(code=constants.AuthVerifyResultCodes.success, message="Token validation succeeded", data=data)
+
