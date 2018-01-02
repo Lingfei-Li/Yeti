@@ -26,31 +26,35 @@ Resources:
           Properties:
             Path: /transactions
             Method: get
+            RestApiId:
+              Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
       Environment:
         Variables:
           YETI_TRANSACTIONS_TABLE:
             Ref: YetiTransactionsTableName
-  YetiApiCloseTransaction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-CloseTransaction
-      Handler: src/yeti_api.close_transaction
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        LoadAllTransactions:
-          Type: Api
-          Properties:
-            Path: /transactions/close/{transactionId}
-            Method: put
-      Policies:
-        - AmazonDynamoDBFullAccess
-      Environment:
-        Variables:
-          YETI_TRANSACTIONS_TABLE:
-            Ref: YetiTransactionsTableName
+#  YetiApiCloseTransaction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      FunctionName: YetiApi-CloseTransaction
+#      Handler: src/yeti_api.close_transaction
+#      Timeout: 10
+#      Runtime: python3.6
+#      Events:
+#        LoadAllTransactions:
+#          Type: Api
+#          Properties:
+#            Path: /transactions/close/{transactionId}
+#            Method: put
+#            RestApiId:
+#              Ref: ProjectYetiApi
+#      Policies:
+#        - AmazonDynamoDBFullAccess
+#      Environment:
+#        Variables:
+#          YETI_TRANSACTIONS_TABLE:
+#            Ref: YetiTransactionsTableName
   YetiApiLogin:
     Type: AWS::Serverless::Function
     Properties:
@@ -62,8 +66,10 @@ Resources:
         LoadAllTransactions:
           Type: Api
           Properties:
-            Path: /login
+            Path: /user/login
             Method: post
+            RestApiId:
+              Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
       Environment:
@@ -144,3 +150,11 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
+
+  # API Gateway
+  ProjectYetiApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: ProjecYetiApi
+      StageName: prod
+      DefinitionUri: swagger.yml

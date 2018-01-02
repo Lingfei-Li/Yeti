@@ -9,6 +9,13 @@ init()
 
 print(Fore.CYAN + "Copying CloudFormation template file to deployment directory")
 
+swaggerSrcPath = os.path.join('.', config['SwaggerDir'],
+                              config['SwaggerFilename'])
+
+swaggerDeployPath = os.path.join('.', config['SwaggerFilename'])
+
+shutil.copy(swaggerSrcPath, swaggerDeployPath)
+
 cfnTemplatePath = os.path.join('.', config['CloudFormationTemplateDir'],
                                config['CloudFormationTemplateFilename'])
 

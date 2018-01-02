@@ -7,5 +7,8 @@ config = {
   "SourceDir": "src",
   "CloudFormationTemplateDir": "cloudFormation",
   "CloudFormationTemplateFilename": "template.yml",
+  "SwaggerDir": "swagger",
+  "SwaggerFilename": "swagger.yml",
   "OutputTemplateFilename": "serverless-output.yml"
+
 }

@@ -24,7 +24,7 @@ secret = 'secret'
 
 class Authorizer:
     @staticmethod
-    def verify_email_password(login_email, password_sha256):
+    def verify_email_password(login_email, password_hash):
         try:
             response = logins_table.get_item(
                 Key={
@@ -37,8 +37,8 @@ class Authorizer:
             if 'Item' not in response:
                 return AuthVerifyResult(code=AuthVerifyResultCodes.login_email_nonexistent, message="Email doesn't exist")
             item = response['Item']
-            db_password_sha256 = item['PasswordSHA256']
-            if password_sha256 != db_password_sha256:
+            db_password_hash = item['PasswordHash']
+            if password_hash!= db_password_hash:
                 return AuthVerifyResult(code=AuthVerifyResultCodes.password_mismatch, message="Password doesn't match")
         # TODO: record login history
         # TODO: check device ID

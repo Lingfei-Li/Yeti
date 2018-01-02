@@ -1,18 +1,14 @@
-import json
 from src import dynamodb
 
-with open('./test_data.py') as test_data_file:
-    test_data = json.load(test_data_file)
+response = dynamodb.transactions_table.scan()
 
-for item in test_data:
+for item in response['Items']:
     response = dynamodb.transactions_table.delete_item(
         Key={
             "TransactionId": item['TransactionId']
         }
     )
     print(response)
-
-
 
 
 

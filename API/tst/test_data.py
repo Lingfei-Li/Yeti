@@ -73,7 +73,7 @@ transactions = [
 
 logins = [{
   'Email': 'skitickets@amazon.com',
-  'PasswordSHA256': '12345',
+  'PasswordHash': '12345',
   'SerializedLoginHistory': "[]",
   'AllowedDevices': []
 }]
