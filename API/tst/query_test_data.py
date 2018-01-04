@@ -1,5 +1,5 @@
 import pprint
-from src import dynamodb
+import dynamodb
 from boto3.dynamodb.conditions import Key
 
 pp = pprint.PrettyPrinter(indent=2)

@@ -17,7 +17,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-LoadTransactions
-      Handler: src/yeti_api.load_transactions
+      Handler: yeti_api.load_transactions
       Timeout: 10
       Runtime: python3.6
       Events:
@@ -38,7 +38,7 @@ Resources:
 #    Type: AWS::Serverless::Function
 #    Properties:
 #      FunctionName: YetiApi-CloseTransaction
-#      Handler: src/yeti_api.close_transaction
+#      Handler: yeti_api.close_transaction
 #      Timeout: 10
 #      Runtime: python3.6
 #      Events:
@@ -55,15 +55,40 @@ Resources:
 #        Variables:
 #          YETI_TRANSACTIONS_TABLE:
 #            Ref: YetiTransactionsTableName
+  YetiApiOutlookOAuth:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-OutlookOAuth
+      Handler: yeti_api.login_outlook_oauth
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        OutlookOAuthLogin:
+          Type: Api
+          Properties:
+            Path: /user/login/outlook_oauth
+            Method: post
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          YETI_TRANSACTIONS_TABLE:
+            Ref: YetiTransactionsTableName
+          YETI_LOGINS_TABLE:
+            Ref: YetiLoginsTableName
+          YETI_DEVICES_TABLE:
+            Ref: YetiDevicesTableName
   YetiApiLogin:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-Login
-      Handler: src/yeti_api.login
+      Handler: yeti_api.login
       Timeout: 10
       Runtime: python3.6
       Events:
-        LoadAllTransactions:
+        Login:
           Type: Api
           Properties:
             Path: /user/login

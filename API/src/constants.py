@@ -8,4 +8,5 @@ class AuthVerifyResultCodes:
     token_invalid = 6
     token_expired = 7
     token_missing = 8
+    auth_code_invalid = 9
 

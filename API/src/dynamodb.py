@@ -1,7 +1,7 @@
 import json
 import decimal
 import boto3
-from src.cloudformation_config import config
+from cloudformation_config import config
 
 
 # Helper class to convert a DynamoDB item to JSON.

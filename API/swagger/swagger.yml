@@ -12,6 +12,68 @@ basePath: "/prod"
 schemes:
 - "https"
 paths:
+  /user/login/outlook_oauth:
+    post:
+      tags:
+        - "user"
+      summary: Validate the provided email-password combination and return a JWT token
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "The credentials for the user to log in"
+        required: true
+        schema:
+          $ref: "#/definitions/OutlookOAuthRequestBody"
+      responses:
+        200:
+          description: "Successful login. JWT token returned."
+          schema:
+            $ref: '#/definitions/LoginResponse'
+        400:
+          description: "Client-side error (Combination incorrect / Request body not properly set)"
+        500:
+          description: "Server-side error"
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-OutlookOAuth/invocations
+        httpMethod: POST
+        type: aws_proxy
+    options:
+      summary: CORS support
+      description: |
+        Enable CORS by returning correct headers
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - CORS
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          "default":
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods : "'*'"
+              method.response.header.Access-Control-Allow-Origin : "'*'"
+            responseTemplates:
+              application/json: |
+                {}
+      responses:
+        200:
+          description: Default response for CORS method
+          headers:
+            Access-Control-Allow-Headers:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
   /user/login:
     post:
       tags:
@@ -136,6 +198,11 @@ paths:
               type: "string"
 
 definitions:
+  OutlookOAuthRequestBody:
+    type: "object"
+    properties:
+      authCode:
+        type: "string"
   LoginRequestBody:
     type: "object"
     properties:

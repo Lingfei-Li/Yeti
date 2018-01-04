@@ -1,5 +1,5 @@
 import pprint
-from src import dynamodb
+import dynamodb
 
 response = dynamodb.transactions_table.scan()
 

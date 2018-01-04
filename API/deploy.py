@@ -12,16 +12,16 @@ print(Fore.CYAN + "Copying CloudFormation template file to deployment directory"
 swaggerSrcPath = os.path.join('.', config['SwaggerDir'],
                               config['SwaggerFilename'])
 
-swaggerDeployPath = os.path.join('.', config['SwaggerFilename'])
+swaggerDeployPath = os.path.join('./src', config['SwaggerFilename'])
 
 shutil.copy(swaggerSrcPath, swaggerDeployPath)
 
 cfnTemplatePath = os.path.join('.', config['CloudFormationTemplateDir'],
                                config['CloudFormationTemplateFilename'])
 
-cfnTemplateDeployPath = os.path.join('.', "deploy_" + config['CloudFormationTemplateFilename'])
+cfnTemplateDeployPath = os.path.join('./src', "deploy_" + config['CloudFormationTemplateFilename'])
 
-outputTemplatePath = os.path.join('.', "deploy_" + config['OutputTemplateFilename'])
+outputTemplatePath = os.path.join('./src', "deploy_" + config['OutputTemplateFilename'])
 
 shutil.copy(cfnTemplatePath, cfnTemplateDeployPath)
 
@@ -49,6 +49,8 @@ try:
         os.remove(cfnTemplateDeployPath)
     if os.path.exists(outputTemplatePath):
         os.remove(outputTemplatePath)
+    if os.path.exists(swaggerDeployPath):
+        os.remove(swaggerDeployPath)
 except subprocess.CalledProcessError as e:
     out_bytes = e.output  # Output generated before error
     code = e.returncode  # Return code

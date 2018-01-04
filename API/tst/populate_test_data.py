@@ -1,6 +1,6 @@
 import json
-from src import dynamodb
-from tst.test_data import transactions, logins
+import dynamodb
+from test_data import transactions, logins
 
 for item in transactions:
     print("Data:", json.dumps(transactions))
