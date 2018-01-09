@@ -8,8 +8,8 @@ Parameters:
   YetiLoginsTableName:
     Description: The name of the logins information table
     Type: String
-  YetiDevicesTableName:
-    Description: The name of the devices information table
+  YetiTokensTableName:
+    Description: The name of the token information table
     Type: String
 
 Resources:
@@ -34,27 +34,6 @@ Resources:
         Variables:
           YETI_TRANSACTIONS_TABLE:
             Ref: YetiTransactionsTableName
-#  YetiApiCloseTransaction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      FunctionName: YetiApi-CloseTransaction
-#      Handler: yeti_api.close_transaction
-#      Timeout: 10
-#      Runtime: python3.6
-#      Events:
-#        LoadAllTransactions:
-#          Type: Api
-#          Properties:
-#            Path: /transactions/close/{transactionId}
-#            Method: put
-#            RestApiId:
-#              Ref: ProjectYetiApi
-#      Policies:
-#        - AmazonDynamoDBFullAccess
-#      Environment:
-#        Variables:
-#          YETI_TRANSACTIONS_TABLE:
-#            Ref: YetiTransactionsTableName
   YetiApiOutlookOAuth:
     Type: AWS::Serverless::Function
     Properties:
@@ -78,8 +57,8 @@ Resources:
             Ref: YetiTransactionsTableName
           YETI_LOGINS_TABLE:
             Ref: YetiLoginsTableName
-          YETI_DEVICES_TABLE:
-            Ref: YetiDevicesTableName
+          YETI_TOKENS_TABLE:
+            Ref: YetiTokensTableName
   YetiApiLogin:
     Type: AWS::Serverless::Function
     Properties:
@@ -103,8 +82,8 @@ Resources:
             Ref: YetiTransactionsTableName
           YETI_LOGINS_TABLE:
             Ref: YetiLoginsTableName
-          YETI_DEVICES_TABLE:
-            Ref: YetiDevicesTableName
+          YETI_TOKENS_TABLE:
+            Ref: YetiTokensTableName
 
   YetiTransactionsTable:
     Type: "AWS::DynamoDB::Table"
@@ -161,16 +140,16 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
-  YetiDevicesTable:
+  YetiTokensTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
       TableName:
-        Ref: YetiDevicesTableName
+        Ref: YetiTokensTableName
       AttributeDefinitions:
-        - AttributeName: "DeviceId"
+        - AttributeName: "AccessToken"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "DeviceId"
+        - AttributeName: "AccessToken"
           KeyType: "HASH"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"

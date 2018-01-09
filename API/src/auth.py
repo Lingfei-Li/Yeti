@@ -1,10 +1,14 @@
 from botocore.exceptions import ClientError
-
-import constants as constants
-import jwt as jwt
-from dynamodb import logins_table
-from constants import AuthVerifyResultCodes
+import logging
+import jwt
 import requests
+
+from dynamodb import logins_table
+import constants as constants
+from constants import AuthVerifyResultCodes
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 class AuthVerifyResult:
@@ -18,9 +22,6 @@ class AuthVerifyResult:
         self.message = message
         self.token = token
         self.data = data
-
-
-secret = 'secret'
 
 
 class OutlookAuthorizer:
@@ -38,6 +39,10 @@ class OutlookAuthorizer:
     # The token issuing endpoint
     token_url = '{0}{1}'.format(authority, '/common/oauth2/v2.0/token')
 
+    # The redirect url must align with the redirect url used for signin
+    test_redirect_url = 'http://localhost:8000/tutorial/gettoken/'
+    redirect_url = 'https://auth.expo.io/@drinkiit/yeti-mobile'
+
     # The scopes required by the app
     scopes = ['openid',
               'offline_access',
@@ -51,7 +56,7 @@ class OutlookAuthorizer:
         # Build the post form for the token request
         post_data = {'grant_type': 'authorization_code',
                      'code': auth_code,
-                     'redirect_uri': 'http://localhost:8000/tutorial/gettoken/',
+                     'redirect_uri': OutlookAuthorizer.redirect_url,
                      'scope': ' '.join(str(i) for i in OutlookAuthorizer.scopes),
                      'client_id': OutlookAuthorizer.client_id,
                      'client_secret': OutlookAuthorizer.client_secret
@@ -69,57 +74,35 @@ class OutlookAuthorizer:
                                                                                                     "{}".format(result_data['error_description']))
         return AuthVerifyResult(code=constants.AuthVerifyResultCodes.success, message="Token retrieved successfully", data=r.json())
 
+
+class LoginAuthorizer:
     @staticmethod
-    def get_user_from_access_token(access_token):
-        get_me_url = graph_endpoint.format('/me')
-
-        # Use OData query parameters to control the results
-        #  - Only return the displayName and mail fields
-        query_parameters = {'$select': 'displayName,mail'}
-
-        r = make_api_call('GET', get_me_url, access_token, "", parameters = query_parameters)
-
-        if (r.status_code == requests.codes.ok):
-            return r.json()
-        else:
-            return "{0}: {1}".format(r.status_code, r.text)
-            pass
-
-
-class Authorizer:
-    @staticmethod
-    def outlook_oauth(auth_code):
-        pass
+    def generate_jwt_token(login_email, secret):
+        token = jwt.encode({'login_email': login_email}, secret)
+        token_utf8 = token.decode('utf-8')
+        return token_utf8
 
     @staticmethod
-    def outlook_oauth(auth_code):
-        pass
-
-    @staticmethod
-    def verify_email_password(login_email, password_hash):
+    def verify_jwt_token(token, login_email):
         try:
             response = logins_table.get_item(
                 Key={
-                    "Email": login_email
+                    'Email': login_email
                 }
             )
         except ClientError as e:
-            return AuthVerifyResult(code=AuthVerifyResultCodes.server_error, message=e.response['Error']['Message'])
+            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.server_error, message="Cannot read data from logins table. Response: {}".format(e.response['Error']['Message']))
         else:
-            if 'Item' not in response:
-                return AuthVerifyResult(code=AuthVerifyResultCodes.login_email_nonexistent, message="Email doesn't exist")
-            item = response['Item']
-            db_password_hash = item['PasswordHash']
-            if password_hash!= db_password_hash:
-                return AuthVerifyResult(code=AuthVerifyResultCodes.password_mismatch, message="Password doesn't match")
-        # TODO: record login history
-        # TODO: check device ID
-        token = jwt.encode({'login_email': login_email, 'someotherdata': 'nothingspecial'}, secret)
-        token_utf8 = token.decode('utf-8')
-        return AuthVerifyResult(code=constants.AuthVerifyResultCodes.success, message="Email-Password Authentication succeeded", token=token_utf8)
+            if 'Item' not in response or not response['Item']:
+                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.login_email_nonexistent, message="Login email not found")
+            else:
+                item = response['Item']
+            if 'Secret' not in item or not item['Secret']:
+                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.password_mismatch, message="No secret is specified for the login email")
+            secret = item['Secret']
 
-    @staticmethod
-    def verify_token(token):
+            logger.info("Successfully put logins data with response: {}".format(response))
+
         if not token:
             return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_missing, message="Token is not set")
         try:

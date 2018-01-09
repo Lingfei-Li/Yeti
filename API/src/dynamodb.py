@@ -19,4 +19,4 @@ class DecimalEncoder(json.JSONEncoder):
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
 transactions_table = dynamodb.Table(config['YetiTransactionsTableName'])
 logins_table = dynamodb.Table(config['YetiLoginsTableName'])
-devices_table = dynamodb.Table(config['YetiDevicesTableName'])
+tokens_table = dynamodb.Table(config['YetiTokensTableName'])

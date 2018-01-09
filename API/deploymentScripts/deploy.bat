@@ -4,4 +4,4 @@ aws cloudformation deploy ^
    --capabilities CAPABILITY_IAM ^
    --parameter-overrides YetiTransactionsTableName=%3 ^
                          YetiLoginsTableName=%4 ^
-                         YetiDevicesTableName=%5
+                         YetiTokensTableName=%5
