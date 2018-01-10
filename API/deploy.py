@@ -36,7 +36,8 @@ try:
                     config["StackName"],
                     config["YetiTransactionsTableName"],
                     config["YetiLoginsTableName"],
-                    config["YetiTokensTableName"]],
+                    config["YetiTokensTableName"]
+                    ],
                    shell=True, check=True)
     # subprocess.run(["deploymentScripts\clean.bat",
     #                 config["DeploymentBucketName"]], shell=True, check=True)

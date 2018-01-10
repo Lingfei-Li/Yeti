@@ -30,10 +30,6 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
-      Environment:
-        Variables:
-          YETI_TRANSACTIONS_TABLE:
-            Ref: YetiTransactionsTableName
   YetiApiOutlookOAuth:
     Type: AWS::Serverless::Function
     Properties:
@@ -51,14 +47,40 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
-      Environment:
-        Variables:
-          YETI_TRANSACTIONS_TABLE:
-            Ref: YetiTransactionsTableName
-          YETI_LOGINS_TABLE:
-            Ref: YetiLoginsTableName
-          YETI_TOKENS_TABLE:
-            Ref: YetiTokensTableName
+  YetiApiCloseTransaction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-CloseTransaction
+      Handler: yeti_api.close_transaction
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        CloseTransaction:
+          Type: Api
+          Properties:
+            Path: /transactions/close/{transactionId}
+            Method: put
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+  YetiApiReopenTransaction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-ReopenTransaction
+      Handler: yeti_api.reopen_transaction
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        ReopenTransaction:
+          Type: Api
+          Properties:
+            Path: /transactions/reopen/{transactionId}
+            Method: put
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
   YetiApiRefreshAccessToken:
     Type: AWS::Serverless::Function
     Properties:
@@ -67,7 +89,7 @@ Resources:
       Timeout: 10
       Runtime: python3.6
       Events:
-        Login:
+        RefreshAccessToken:
           Type: Api
           Properties:
             Path: /user/token/refresh_access_token
@@ -76,14 +98,6 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
-      Environment:
-        Variables:
-          YETI_TRANSACTIONS_TABLE:
-            Ref: YetiTransactionsTableName
-          YETI_LOGINS_TABLE:
-            Ref: YetiLoginsTableName
-          YETI_TOKENS_TABLE:
-            Ref: YetiTokensTableName
 
   YetiTransactionsTable:
     Type: "AWS::DynamoDB::Table"

@@ -139,6 +139,80 @@ def load_transactions(event, context):
     })
 
 
+def close_transaction(event, context):
+    error_response, login_email = auth_non_login_event(event)
+    if error_response is not None:
+        return error_response
+
+    # Get transaction id from path parameter
+    try:
+        transaction_id = event['pathParameters']['transactionId']
+        logger.info('closing transaction id: {}'.format(transaction_id))
+    except (KeyError, TypeError):
+        return api_response.client_error("Cannot read property 'transactionId' from path parameters. ")
+
+    # Check if the transaction id exists
+    try:
+        response = transactions_table.get_item(Key={'TransactionId': transaction_id})
+    except ClientError as e:
+        logger.info(e.response['Error']['Message'])
+        return api_response.internal_error(e.response['Error']['Message'])
+    if 'Item' not in response or not response['Item']:
+        return api_response.not_found("TransactionId {} doesn't exist".format(transaction_id))
+
+    # Update the StatusCode of the transaction.
+    # Currently, it doesn't check for current StatusCode. Simply overrides the status to completed
+    transactions_table.update_item(
+        Key={
+            'TransactionId': transaction_id,
+        },
+        UpdateExpression="set StatusCode = :s",
+        ExpressionAttributeValues={
+            ':s': constants.TransactionStatusCode.completed
+        }
+    )
+
+    logger.info("Transaction {} closed successfully".format(transaction_id))
+    return api_response.ok_no_data("Transaction {} closed successfully".format(transaction_id))
+
+
+def reopen_transaction(event, context):
+    error_response, login_email = auth_non_login_event(event)
+    if error_response is not None:
+        return error_response
+
+    # Get transaction id from path parameter
+    try:
+        transaction_id = event['pathParameters']['transactionId']
+        logger.info('closing transaction id: {}'.format(transaction_id))
+    except (KeyError, TypeError):
+        return api_response.client_error("Cannot read property 'transactionId' from path parameters. ")
+
+    # Check if the transaction id exists
+    try:
+        response = transactions_table.get_item(Key={'TransactionId': transaction_id})
+    except ClientError as e:
+        logger.info(e.response['Error']['Message'])
+        return api_response.internal_error(e.response['Error']['Message'])
+    if 'Item' not in response or not response['Item']:
+        return api_response.not_found("TransactionId {} doesn't exist".format(transaction_id))
+
+    # Update the StatusCode of the transaction.
+    # Currently, it doesn't check for current StatusCode. Simply overrides the status to open
+    transactions_table.update_item(
+        Key={
+            'TransactionId': transaction_id,
+        },
+        UpdateExpression="set StatusCode = :s",
+        ExpressionAttributeValues={
+            ':s': constants.TransactionStatusCode.open
+        }
+    )
+
+    logger.info("Transaction {} re-opened successfully".format(transaction_id))
+    return api_response.ok_no_data("Transaction {} re-opened successfully".format(transaction_id))
+
+
 def refresh_access_token(event, context):
     logger.debug("Got an token refresh request")
     try:
@@ -163,76 +237,76 @@ def refresh_access_token(event, context):
     except ClientError as e:
         logger.info(e.response['Error']['Message'])
         return api_response.internal_error(e.response['Error']['Message'])
+
+    if 'Item' not in response or not response['Item']:
+        return api_response.not_found("Required access token does not exist")
     else:
-        if 'Item' not in response or not response['Item']:
-            return api_response.not_found("Required access token does not exist")
-        else:
-            item = response['Item']
-        if 'RefreshToken' not in item or not item['RefreshToken']:
-            logger.info("Refresh token doesn't exist for the required access token")
-            return api_response.internal_error("Refresh token doesn't exist for the required access token")
+        item = response['Item']
+    if 'RefreshToken' not in item or not item['RefreshToken']:
+        logger.info("Refresh token doesn't exist for the required access token")
+        return api_response.internal_error("Refresh token doesn't exist for the required access token")
 
-        if old_refresh_token != item['RefreshToken']:
-            return api_response.client_error("Provided refresh token doesn't match with the record in database")
+    if old_refresh_token != item['RefreshToken']:
+        return api_response.client_error("Provided refresh token doesn't match with the record in database")
 
-        auth_verify_result = OutlookAuthorizer.refresh_token(old_refresh_token)
+    auth_verify_result = OutlookAuthorizer.refresh_token(old_refresh_token)
 
-        if not auth_verify_result:
-            logger.info("An error occurred authenticating user login request. Failed to retrieve auth verification result")
-            return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result")
-        elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
-            logger.info("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
-            return api_response.client_error("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
+    if not auth_verify_result:
+        logger.info("An error occurred authenticating user login request. Failed to retrieve auth verification result")
+        return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result")
+    elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
+        logger.info("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
+        return api_response.client_error("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
 
-        auth_result_data = auth_verify_result.data
-        new_access_token = auth_result_data['access_token']
-        new_refresh_token = auth_result_data['refresh_token']
-        new_expires_in = auth_result_data['expires_in']
-        new_expiration_unix_timestamp = datetime.now().timestamp() + new_expires_in - 300  # current time + expiration - 5 minutes
+    auth_result_data = auth_verify_result.data
+    new_access_token = auth_result_data['access_token']
+    new_refresh_token = auth_result_data['refresh_token']
+    new_expires_in = auth_result_data['expires_in']
+    new_expiration_unix_timestamp = datetime.now().timestamp() + new_expires_in - 300  # current time + expiration - 5 minutes
 
-        if new_expiration_unix_timestamp < datetime.now().timestamp():
-            logger.info("AccessToken already expired when retrieved from authCode")
-            return api_response.internal_error("AccessToken already expired when retrieved from refresh token")
+    if new_expiration_unix_timestamp < datetime.now().timestamp():
+        logger.info("AccessToken already expired when retrieved from authCode")
+        return api_response.internal_error("AccessToken already expired when retrieved from refresh token")
 
-        user = outlook_service.get_me(new_access_token)
-        user_email = None
-        if 'mail' in user and user['mail'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['mail']):
-            user_email = user['mail']
-        if 'userPrincipalName' in user and user['userPrincipalName'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['userPrincipalName']):
-            user_email = user['userPrincipalName']
-        if not user_email:
-            logger.error("Cannot determine user email. Auth result: {}".format(auth_result_data))
-            return api_response.internal_error("Cannot determine user email. Refresh token result: {}. Get user response: {}".format(auth_result_data, user))
+    user = outlook_service.get_me(new_access_token)
+    user_email = None
+    if 'mail' in user and user['mail'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['mail']):
+        user_email = user['mail']
+    if 'userPrincipalName' in user and user['userPrincipalName'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['userPrincipalName']):
+        user_email = user['userPrincipalName']
+    if not user_email:
+        logger.error("Cannot determine user email. Auth result: {}".format(auth_result_data))
+        return api_response.internal_error("Cannot determine user email. Refresh token result: {}. Get user response: {}".format(auth_result_data, user))
 
-        # Save the new token to DDB
-        logger.info("Saving new token to database")
-        tokens_table.put_item(Item={
-            'AccessToken': new_access_token,
-            "Email": user_email,
-            'RefreshToken': new_refresh_token,
-            'StatusCode': constants.AccessTokenStatusCode.valid,
-            'ExpirationUnixTimestamp': Decimal(new_expiration_unix_timestamp)
-        })
+    # Save the new token to DDB
+    logger.info("Saving new token to database")
+    tokens_table.put_item(Item={
+        'AccessToken': new_access_token,
+        "Email": user_email,
+        'RefreshToken': new_refresh_token,
+        'StatusCode': constants.AccessTokenStatusCode.valid,
+        'ExpirationUnixTimestamp': Decimal(new_expiration_unix_timestamp)
+    })
 
-        # Update the status of the old token
-        logger.info("Updating old token")
-        tokens_table.update_item(
-            Key={
-                'AccessToken': old_access_token,
-            },
-            UpdateExpression="set StatusCode = :s",
-            ExpressionAttributeValues={
-                ':s': constants.AccessTokenStatusCode.refreshed
-            }
-        )
-
-        response = {
-            'message': 'Token refreshed successfully',
-            'accessToken': new_access_token
+    # Update the status of the old token
+    logger.info("Updating old token")
+    tokens_table.update_item(
+        Key={
+            'AccessToken': old_access_token,
+        },
+        UpdateExpression="set StatusCode = :s",
+        ExpressionAttributeValues={
+            ':s': constants.AccessTokenStatusCode.refreshed
         }
+    )
 
-        logger.info("Sending response: {}".format(response))
-        return api_response.ok(response)
+    response = {
+        'message': 'Token refreshed successfully',
+        'accessToken': new_access_token
+    }
+
+    logger.info("Sending response: {}".format(response))
+    return api_response.ok(response)
 
 
 def auth_non_login_event(event):
@@ -262,3 +336,4 @@ def auth_non_login_event(event):
         return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
 
     return None, login_email
+
