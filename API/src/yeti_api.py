@@ -61,7 +61,7 @@ def login_outlook_oauth(event, context):
         logger.error("Cannot determine user email. Auth result: {}".format(auth_result_data))
         return api_response.internal_error("Cannot determine user email. Auth result: {}".format(auth_result_data))
 
-    # TODO: save token to DDB
+    # Save token to DDB
     tokens_table.put_item(Item={
         'AccessToken': access_token,
         "Email": user_email,
@@ -69,9 +69,10 @@ def login_outlook_oauth(event, context):
         'ExpirationUnixTimestamp': Decimal(expiration_unix_timestamp)
     })
 
-    # Check if email exists.
-    #  If no, create an entry for the email with an UUID secret.
-    #  Create a jwt and return it to front end
+    # Check if it's first time that this email logins
+    #  If yes, create an entry for the email with an UUID secret.
+    #  Otherwise, obtain the secret from the data item
+    # Create a jwt and return it to front end
     try:
         response = logins_table.get_item(
             Key={
@@ -84,55 +85,31 @@ def login_outlook_oauth(event, context):
     else:
         if 'Item' not in response or not response['Item']:
             item = {
-                "Email": user_email
+                "Email": user_email,
+                "Secret": str(uuid4())
             }
+            logger.info("Constructed logins data item for first-time login: {}".format(item))
+
+            response = logins_table.put_item(
+                Item=item
+            )
+            logger.info("Successfully put logins data with response: {}".format(response))
         else:
             item = response['Item']
-        secret = str(uuid4())
         if 'Secret' not in item or not item['Secret']:
-            item['Secret'] = secret
-        logger.info("Constructed logins data item: {}".format(item))
-
-        response = logins_table.put_item(
-            Item=item
-        )
-        logger.info("Successfully put logins data with response: {}".format(response))
+            logger.error("Email {} exists but doesn't have a secret".format(user_email))
+            return api_response.internal_error("Cannot find secret for email {}".format(user_email))
 
         # TODO: Trigger email processor to refresh email
 
         response = {
             'message': 'Outlook OAuth success',
-            'user_email': user_email,
-            'token': LoginAuthorizer.generate_jwt_token(login_email=user_email, secret=secret)
+            'login_email': user_email,
+            'token': LoginAuthorizer.generate_jwt_token(login_email=user_email, secret=item['Secret'])
         }
 
+        logger.info("Sending response: {}".format(response))
         return api_response.ok(response)
-
-
-def login(event, context):
-    # TODO: retrieve the email and token from request. verify if the token exists for the email
-    # TODO: If token exists in the expired tokens, issue a valid token back to the client
-    # TODO: If no valid token exists for the email, get a refreshed token with the old token and return the new token
-
-    try:
-        body = json.loads(event['body'])
-    except (KeyError, TypeError, ValueError):  # By default Lambda sets the body to None if it's left empty -> TypeError
-        return api_response.client_error("Cannot parse request body to JSON object. ")
-
-    try:
-        login_email = body['loginEmail']
-        password_hash = body['passwordHash']
-    except KeyError:
-        return api_response.client_error("Cannot read property 'loginEmail' or 'passwordHash' from the request body. ")
-
-    auth_verify_result = Authorizer.verify_email_password(login_email, password_hash)
-
-    if not auth_verify_result:
-        return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result")
-    elif auth_verify_result.code != constants.AuthVerifyResultCodes.success:
-        return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
-
-    return api_response.ok({"message": "Email-Password login auth validated", "token": auth_verify_result.token})
 
 
 def load_transactions(event, context):
@@ -163,18 +140,28 @@ def load_transactions(event, context):
 
 def auth_non_login_event(event):
     try:
-        token = event['headers']['Authorization']
+        authorization_header = event['headers']['Authorization']
     except (KeyError, TypeError):
         return api_response.client_error("Cannot read property 'Authorization' from request header"), None
 
-    auth_verify_result = Authorizer.verify_token(token=token)
+    try:
+        login_email = event['headers']['LoginEmail']
+    except (KeyError, TypeError):
+        return api_response.client_error("Cannot read property 'LoginEmail' from request header"), None
+
+    authorization_components = authorization_header.split(" ")
+    if len(authorization_components) == 0 or authorization_components[0] != 'Bearer':
+        return api_response.client_error("Only 'Bearer' header type for Authorization is supported. Please set the Authorization header to 'Bearer <token>'"), None
+    if len(authorization_components) < 2 or not authorization_components[1]:
+        return api_response.client_error("Authorization token cannot be found"), None
+
+    token = authorization_components[1]
+
+    auth_verify_result = LoginAuthorizer.verify_jwt_token(login_email=login_email, token=token)
 
     if not auth_verify_result:
         return api_response.internal_error("An error occurred when verifying token. Failed to retrieve auth verification result"), None
     elif auth_verify_result.code != constants.AuthVerifyResultCodes.success:
         return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
-    payload = auth_verify_result.data
-    if not payload or 'login_email' not in payload or not payload['login_email']:
-        return api_response.client_error("'login_email' is missing from the token"), None
 
-    return None, payload['login_email']
+    return None, login_email

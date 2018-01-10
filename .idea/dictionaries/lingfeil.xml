@@ -2,6 +2,7 @@
   <dictionary name="lingfeil">
     <words>
       <w>cloudformation</w>
+      <w>jwt</w>
     </words>
   </dictionary>
 </component>

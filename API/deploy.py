@@ -3,7 +3,7 @@ import json
 import shutil
 import os.path
 from colorama import init, Fore
-from src.cloudformation_config import config
+from cloudformation_config import config
 
 init()
 

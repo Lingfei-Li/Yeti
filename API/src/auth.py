@@ -5,7 +5,6 @@ import requests
 
 from dynamodb import logins_table
 import constants as constants
-from constants import AuthVerifyResultCodes
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -84,6 +83,9 @@ class LoginAuthorizer:
 
     @staticmethod
     def verify_jwt_token(token, login_email):
+        if not token:
+            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_missing, message="Token is not set")
+
         try:
             response = logins_table.get_item(
                 Key={
@@ -98,16 +100,17 @@ class LoginAuthorizer:
             else:
                 item = response['Item']
             if 'Secret' not in item or not item['Secret']:
-                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.password_mismatch, message="No secret is specified for the login email")
+                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.password_mismatch, message="No secret is found for the login email")
             secret = item['Secret']
 
             logger.info("Successfully put logins data with response: {}".format(response))
 
-        if not token:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_missing, message="Token is not set")
         try:
             token = token.strip()
             data = jwt.decode(token, secret)
+            token_login_email = data['login_email']
+            if not token_login_email or token_login_email != login_email:
+                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_invalid, message="Token's login_email is empty or doesn't match header's login_email", data=data)
         except jwt.DecodeError:
             return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_invalid, message="Token validation failed")
         return AuthVerifyResult(code=constants.AuthVerifyResultCodes.success, message="Token validation succeeded", data=data)

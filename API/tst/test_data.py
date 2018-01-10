@@ -6,7 +6,7 @@ transactions = [
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513890388,
     "PaymentMethod": "venmo",
-    "ReceiverEmail": "skitickets@amazon.com",
+    "ReceiverEmail": "cslilingfei@outlook.com",
     "SenderEmail": "john@amazon.com",
     "SenderFirstName": "John",
     "SenderLastName": "Doe",
@@ -20,7 +20,7 @@ transactions = [
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513590388,
     "PaymentMethod": "venmo",
-    "ReceiverEmail": "skitickets@amazon.com",
+    "ReceiverEmail": "cslilingfei@outlook.com",
     "SenderEmail": "john@amazon.com",
     "SenderFirstName": "John",
     "SenderLastName": "Doe",
@@ -34,7 +34,7 @@ transactions = [
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513544787,
     "PaymentMethod": "venmo",
-    "ReceiverEmail": "skitickets@amazon.com",
+    "ReceiverEmail": "cslilingfei@outlook.com",
     "SenderEmail": "homer@amazon.com",
     "SenderFirstName": "Homer",
     "SenderLastName": "Simpson",
@@ -48,7 +48,7 @@ transactions = [
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513544787,
     "PaymentMethod": "venmo",
-    "ReceiverEmail": "skitickets@amazon.com",
+    "ReceiverEmail": "cslilingfei@outlook.com",
     "SenderEmail": "Tom@amazon.com",
     "SenderFirstName": "Tom",
     "SenderLastName": "Jerry",
@@ -71,9 +71,5 @@ transactions = [
   }
 ]
 
-logins = [{
-  'Email': 'skitickets@amazon.com',
-  'PasswordHash': '12345',
-  'SerializedLoginHistory': "[]",
-  'AllowedDevices': []
-}]
+logins = [
+]
