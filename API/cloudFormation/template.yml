@@ -160,10 +160,10 @@ Resources:
       TableName:
         Ref: YetiTokensTableName
       AttributeDefinitions:
-        - AttributeName: "AccessToken"
+        - AttributeName: "Email"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "AccessToken"
+        - AttributeName: "Email"
           KeyType: "HASH"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
