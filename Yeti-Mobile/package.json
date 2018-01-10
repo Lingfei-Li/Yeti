@@ -24,6 +24,7 @@
     "jwt-decode": "^2.2.0",
     "react": "16.0.0",
     "react-native": "0.50.3",
+    "react-native-device-log": "^1.0.2",
     "react-native-vector-icons": "^4.4.3",
     "react-navigation": "^1.0.0-beta.22"
   }

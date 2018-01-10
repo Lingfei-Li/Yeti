@@ -7,16 +7,12 @@ import {Button, StyleSheet, Text, View} from 'react-native';
 import {AuthSession} from 'expo';
 
 import LambdaAPI from '../LambdaAPI';
+import log from '../components/log';
 
 
 const CLIENT_ID = '1420c3c4-8202-411f-870d-64b6166fd980';
 
 export default class LoginPage extends React.Component {
-  state = {
-    oauthResult: null,
-    lambdaResult: null,
-  };
-
   _handlePressAsync = async () => {
     let redirectUrl = AuthSession.getRedirectUrl();
     const authURL =
@@ -25,24 +21,22 @@ export default class LoginPage extends React.Component {
       `&response_type=code` +
       `&client_id=${encodeURIComponent(CLIENT_ID)}` +
       `&redirect_uri=${encodeURIComponent(redirectUrl)}`;
-    console.log("Outlook OAuth URL: ", authURL);
+
+    log.log(`Outlook OAuth URL: ${authURL}`);
     let result = await AuthSession.startAsync({
       authUrl: authURL
     });
-    console.log(result);
-    this.setState({oauthResult: result});
+    log.log(result);
 
     if (result && result.type === 'success') {
       const code = result.params.code;
-      console.log("Authorized successfully, code: ", code);
+      log.log(`Authorized successfully, code: ${code}`);
       LambdaAPI.uploadOutlookCode(code)
         .then((response) => {
-          console.log(response);
-          this.setState({lambdaResult: response.data});
+          log.log("Call outlook_oauth, Success! Response: ", response.data);
         })
         .catch((error) => {
-          console.log(error);
-          this.setState({lambdaResult: error.data});
+          log.log("Call outlook_oauth, Error! Error: ", error.response);
         })
     }
   };
@@ -52,12 +46,7 @@ export default class LoginPage extends React.Component {
       <View style={styles.container}>
         <Button title="Open Outlook Auth" onPress={this._handlePressAsync}/>
         <Button title="Open Transaction List View" onPress={() => this.props.navigation.navigate('TransactionListView')}/>
-        {this.state.oauthResult ? (
-          <Text>{JSON.stringify(this.state.oauthResult)}</Text>
-        ) : null}
-        {this.state.lambdaResult ? (
-          <Text>{JSON.stringify(this.state.lambdaResult)}</Text>
-        ) : null}
+        <Button title="Open Debug View" onPress={() => this.props.navigation.navigate('DebugView')}/>
       </View>
     );
   }

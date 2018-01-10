@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Header from '../components/Header';
 import LambdaAPI from '../LambdaAPI';
+import log from '../components/log';
 
 
 const FakeData = [

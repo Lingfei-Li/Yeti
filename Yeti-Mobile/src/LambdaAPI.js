@@ -14,7 +14,7 @@ export default class LambdaAPI {
     return(
       axios({
         method: 'POST',
-        url: 'https://d4g1nmfov8.execute-api.us-west-2.amazonaws.com/prod/user/login/outlook_oauth',
+        url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/user/login/outlook_oauth',
         // url: 'http://httpbin.org/post',
         headers: {
           "content-type": "application/json",

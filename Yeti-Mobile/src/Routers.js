@@ -5,6 +5,7 @@
 import LoginPage from './pages/LoginPage';
 import TransactionListView from './pages/TransactionListView';
 import TransactionDetails from './pages/TransactionDetails';
+import DebugView from './pages/DebugView';
 
 
 const Routers = {
@@ -22,6 +23,10 @@ const Routers = {
     name: 'TransactionDetails',
     description: 'Transaction Details',
     screen: TransactionDetails,
+  },
+  DebugView: {
+    name: 'DebugView',
+    screen: DebugView,
   }
 };
 
