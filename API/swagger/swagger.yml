@@ -4,7 +4,7 @@ info:
   title: "Project Yeti"
 tags:
   - name: "user"
-    description: "Auth operations on users"
+    description: "Auth operations on users/logins/token"
   - name: "transaction"
     description: "Operations on transactions"
 
@@ -74,68 +74,31 @@ paths:
               type: "string"
             Access-Control-Allow-Origin:
               type: "string"
-  /user/login:
+  /user/token/refresh_access_token:
     post:
       tags:
         - "user"
-      summary: Validate the provided email-password combination and return a JWT token
+      summary: Get a new access token with the provided refresh token
       parameters:
       - in: "body"
         name: "body"
-        description: "The credentials for the user to log in"
+        description: "The refresh token and the access token"
         required: true
         schema:
-          $ref: "#/definitions/LoginRequestBody"
+          $ref: "#/definitions/RefreshAccessTokenRequestBody"
       responses:
         200:
-          description: "Successful login. JWT token returned."
+          description: "Successfully retrieved a new access token"
           schema:
-            $ref: '#/definitions/LoginResponse'
+            $ref: '#/definitions/RefreshAccessTokenResponse'
         400:
-          description: "Client-side error (Combination incorrect / Request body not properly set)"
+          description: "Client-side error"
         500:
           description: "Server-side error"
       x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-Login/invocations
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-RefreshAccessToken/invocations
         httpMethod: POST
         type: aws_proxy
-    options:
-      summary: CORS support
-      description: |
-        Enable CORS by returning correct headers
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      tags:
-        - CORS
-      x-amazon-apigateway-integration:
-        type: mock
-        requestTemplates:
-          application/json: |
-            {
-              "statusCode" : 200
-            }
-        responses:
-          "default":
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods : "'*'"
-              method.response.header.Access-Control-Allow-Origin : "'*'"
-            responseTemplates:
-              application/json: |
-                {}
-      responses:
-        200:
-          description: Default response for CORS method
-          headers:
-            Access-Control-Allow-Headers:
-              type: "string"
-            Access-Control-Allow-Methods:
-              type: "string"
-            Access-Control-Allow-Origin:
-              type: "string"
   /transactions:
     get:
       tags:
@@ -203,19 +166,19 @@ definitions:
     properties:
       authCode:
         type: "string"
-  LoginRequestBody:
+  RefreshAccessTokenRequestBody:
     type: "object"
     properties:
-      loginEmail:
+      accessToken:
         type: "string"
-      passwordHash:
+      refreshToken:
         type: "string"
-  LoginResponse:
+  RefreshAccessTokenResponse:
     type: "object"
     properties:
       message:
         type: "string"
-      token:
+      accessToken:
         type: "string"
   Transactions:
     type: "object"

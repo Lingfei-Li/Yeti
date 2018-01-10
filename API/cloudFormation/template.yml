@@ -59,18 +59,18 @@ Resources:
             Ref: YetiLoginsTableName
           YETI_TOKENS_TABLE:
             Ref: YetiTokensTableName
-  YetiApiLogin:
+  YetiApiRefreshAccessToken:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: YetiApi-Login
-      Handler: yeti_api.login
+      FunctionName: YetiApi-RefreshAccessToken
+      Handler: yeti_api.refresh_access_token
       Timeout: 10
       Runtime: python3.6
       Events:
         Login:
           Type: Api
           Properties:
-            Path: /user/login
+            Path: /user/token/refresh_access_token
             Method: post
             RestApiId:
               Ref: ProjectYetiApi

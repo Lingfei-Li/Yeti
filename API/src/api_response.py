@@ -7,31 +7,37 @@ CORS_HEADERS = {
 }
 
 
-def ok(data):
-    return response(200, json.dumps(data))
+def ok(data, headers=None):
+    return response(200, json.dumps(data), headers)
 
 
-def ok_no_data(message):
+def ok_no_data(message, headers=None):
     return response(200, {
         "message": message
-    })
+    }, headers)
 
 
-def client_error(error_msg):
+def client_error(error_msg, headers=None):
     return response(400, {
         'error': error_msg
-    })
+    }, headers)
 
 
-def internal_error(error_msg):
+def not_found(error_msg, headers=None):
+    return response(404, {
+        'error': error_msg
+    }, headers)
+
+
+def internal_error(error_msg, headers=None):
     return response(500, {
         'error': error_msg
-    })
+    }, headers)
 
 
-def response(status_code, data):
+def response(status_code, data, headers=None):
     return {
         'statusCode': status_code,
-        'headers': CORS_HEADERS,
+        'headers': CORS_HEADERS if headers is None else headers,
         'body': json.dumps(data)
     }

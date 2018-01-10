@@ -2,7 +2,7 @@ transactions = [
   {
     "TransactionId": "payment-100",
     "Amount": 59,
-    "Status": "open",
+    "StatusCode": 0,
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513890388,
     "PaymentMethod": "venmo",
@@ -16,7 +16,7 @@ transactions = [
   {
     "TransactionId": "payment-101",
     "Amount": 59,
-    "Status": "open",
+    "StatusCode": 0,
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513590388,
     "PaymentMethod": "venmo",
@@ -30,7 +30,7 @@ transactions = [
   {
     "TransactionId": "payment-200",
     "Amount": 118,
-    "Status": "closed",
+    "StatusCode": 1,
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513544787,
     "PaymentMethod": "venmo",
@@ -44,7 +44,7 @@ transactions = [
   {
     "TransactionId": "payment-300",
     "Amount": 59,
-    "Status": "open",
+    "StatusCode": 0,
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513544787,
     "PaymentMethod": "venmo",
@@ -58,7 +58,7 @@ transactions = [
   {
     "TransactionId": "payment-400",
     "Amount": 59,
-    "Status": "open",
+    "StatusCode": 0,
     "TransactionType": "payment",
     "TransactionUnixTimestamp": 1513544787,
     "PaymentMethod": "venmo",

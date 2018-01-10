@@ -1,4 +1,4 @@
-class AuthVerifyResultCodes:
+class AuthVerifyResultCode:
     success = 0
     password_mismatch = 1
     login_email_nonexistent = 2
@@ -10,3 +10,13 @@ class AuthVerifyResultCodes:
     token_missing = 8
     auth_code_invalid = 9
 
+
+class AccessTokenStatusCode:
+    valid = 0
+    refreshed = 1
+    blacklisted = 2
+
+
+class TransactionStatusCode:
+    open = 0
+    completed = 1

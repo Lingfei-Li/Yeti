@@ -66,12 +66,36 @@ class OutlookAuthorizer:
         try:
             result_data = r.json()
         except Exception as e:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.auth_code_invalid, message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
                                                                                                                                                                r.text, e))
         if 'error' in result_data and result_data['error']:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.auth_code_invalid, message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: "
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: "
                                                                                                     "{}".format(result_data['error_description']))
-        return AuthVerifyResult(code=constants.AuthVerifyResultCodes.success, message="Token retrieved successfully", data=r.json())
+        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token retrieved successfully", data=r.json())
+
+    @staticmethod
+    def refresh_token(refresh_token):
+        # Build the post form for the token request
+        post_data = {'grant_type': 'refresh_token',
+                     'refresh_token': refresh_token,
+                     'redirect_uri': OutlookAuthorizer.redirect_url,
+                     'scope': ' '.join(str(i) for i in OutlookAuthorizer.scopes),
+                     'client_id': OutlookAuthorizer.client_id,
+                     'client_secret': OutlookAuthorizer.client_secret
+                     }
+
+        r = requests.post(OutlookAuthorizer.token_url, data=post_data)
+
+        try:
+            result_data = r.json()
+        except Exception as e:
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
+                                                                                                                                                               r.text, e))
+
+        if 'error' in result_data and result_data['error']:
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: "
+                                                                                                    "{}".format(result_data['error_description']))
+        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token refreshed successfully", data=r.json())
 
 
 class LoginAuthorizer:
@@ -84,7 +108,7 @@ class LoginAuthorizer:
     @staticmethod
     def verify_jwt_token(token, login_email):
         if not token:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_missing, message="Token is not set")
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_missing, message="Token is not set")
 
         try:
             response = logins_table.get_item(
@@ -93,14 +117,15 @@ class LoginAuthorizer:
                 }
             )
         except ClientError as e:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.server_error, message="Cannot read data from logins table. Response: {}".format(e.response['Error']['Message']))
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
+                                    message="Cannot read data from logins table. Response: {}".format(e.response['Error']['Message']))
         else:
             if 'Item' not in response or not response['Item']:
-                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.login_email_nonexistent, message="Login email not found")
+                return AuthVerifyResult(code=constants.AuthVerifyResultCode.login_email_nonexistent, message="Login email not found")
             else:
                 item = response['Item']
             if 'Secret' not in item or not item['Secret']:
-                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.password_mismatch, message="No secret is found for the login email")
+                return AuthVerifyResult(code=constants.AuthVerifyResultCode.password_mismatch, message="No secret is found for the login email")
             secret = item['Secret']
 
             logger.info("Successfully put logins data with response: {}".format(response))
@@ -110,8 +135,7 @@ class LoginAuthorizer:
             data = jwt.decode(token, secret)
             token_login_email = data['login_email']
             if not token_login_email or token_login_email != login_email:
-                return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_invalid, message="Token's login_email is empty or doesn't match header's login_email", data=data)
+                return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_invalid, message="Token's login_email is empty or doesn't match header's login_email", data=data)
         except jwt.DecodeError:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCodes.token_invalid, message="Token validation failed")
-        return AuthVerifyResult(code=constants.AuthVerifyResultCodes.success, message="Token validation succeeded", data=data)
-
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_invalid, message="Token validation failed")
+        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token validation succeeded", data=data)
