@@ -18,6 +18,17 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+def kms_test(event, context):
+    import boto3
+    import os
+    from base64 import b64decode
+
+    encrypted = os.environ['var']
+    decrypted = boto3.client('kms').decrypt(CiphertextBlob=b64decode(encrypted))['Plaintext']
+
+    print("decrypted: ", decrypted)
+
+
 def login_outlook_oauth(event, context):
     logger.debug("Got an outlook auth request")
     try:
@@ -100,6 +111,8 @@ def login_outlook_oauth(event, context):
         if 'Secret' not in item or not item['Secret']:
             logger.error("Email {} exists but doesn't have a secret".format(user_email))
             return api_response.internal_error("Cannot find secret for email {}".format(user_email))
+
+        # TODO: Trigger email processor to refresh email
 
         response = {
             'message': 'Outlook OAuth success',
@@ -247,20 +260,6 @@ def refresh_access_token(event, context):
     if old_refresh_token != item['RefreshToken']:
         return api_response.client_error("Provided refresh token doesn't match with the record in database")
 
-    # Get a new token with the old refresh token
-    # The new tokens will be saved to DB by the helper
-    new_access_token, _ = refresh_access_token_helper(old_access_token, old_refresh_token)
-
-    response = {
-        'message': 'Token refreshed successfully',
-        'accessToken': new_access_token
-    }
-
-    logger.info("Sending response: {}".format(response))
-    return api_response.ok(response)
-
-
-def refresh_access_token_helper(old_access_token, old_refresh_token):
     auth_verify_result = OutlookAuthorizer.refresh_token(old_refresh_token)
 
     if not auth_verify_result:
@@ -312,7 +311,13 @@ def refresh_access_token_helper(old_access_token, old_refresh_token):
         }
     )
 
-    return new_access_token, new_refresh_token
+    response = {
+        'message': 'Token refreshed successfully',
+        'accessToken': new_access_token
+    }
+
+    logger.info("Sending response: {}".format(response))
+    return api_response.ok(response)
 
 
 def auth_non_login_event(event):
