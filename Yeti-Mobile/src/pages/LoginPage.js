@@ -5,6 +5,7 @@
 import React from 'react';
 import {Button, StyleSheet, Text, View} from 'react-native';
 import {AuthSession} from 'expo';
+import {inject, observer} from "mobx-react";
 
 import LambdaAPI from '../LambdaAPI';
 import log from '../components/log';
@@ -12,7 +13,13 @@ import log from '../components/log';
 
 const CLIENT_ID = '1420c3c4-8202-411f-870d-64b6166fd980';
 
+@inject("store")
+@observer
 export default class LoginPage extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
   _handlePressAsync = async () => {
     let redirectUrl = AuthSession.getRedirectUrl();
     const authURL =
@@ -34,9 +41,16 @@ export default class LoginPage extends React.Component {
       LambdaAPI.uploadOutlookCode(code)
         .then((response) => {
           log.log("Call outlook_oauth, Success! Response: ", response.data);
+          // FIXME: Why Response Data is a String...?
+          const respData = JSON.parse(response.data);
+          this.props.store.email = respData.loginEmail;
+          this.props.store.token = respData.token;
+
+          // Navigate to Transaction List View
+          this.props.navigation.navigate('TransactionListView')
         })
         .catch((error) => {
-          log.log("Call outlook_oauth, Error! Error: ", error.response);
+          log.log(`Call outlook_oauth, Error! Status Code: ${error.status}. Error: `, error.response);
         })
     }
   };

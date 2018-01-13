@@ -1,7 +1,9 @@
 import React from 'react';
-import { StackNavigator } from 'react-navigation';
-
+import {StackNavigator} from 'react-navigation';
 import Routers from './src/Routers';
+
+import {Provider} from 'mobx-react/native';
+import store from './src/store';
 
 
 const AppNavigator = StackNavigator(
@@ -18,4 +20,8 @@ const AppNavigator = StackNavigator(
   }
 );
 
-export default () => <AppNavigator />;
+export default () => (
+  <Provider store={store}>
+    <AppNavigator/>
+  </Provider>
+);

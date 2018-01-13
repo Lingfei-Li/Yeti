@@ -27,9 +27,19 @@ export default class LambdaAPI {
     )
   }
 
-  static getAllTransactions() {
+  static getAllTransactions(email, token) {
     return (
-      null
+      axios({
+        method: 'GET',
+        url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/transactions',
+        headers: {
+          Authorization: "Bearer " + token
+        },
+        data: {
+          LoginEmail: email
+        },
+        timeout: connectionTimeOut,
+      })
     )
   }
 }
