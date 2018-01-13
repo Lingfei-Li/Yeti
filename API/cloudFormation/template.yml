@@ -11,8 +11,17 @@ Parameters:
   YetiTokensTableName:
     Description: The name of the token information table
     Type: String
+  OutlookOAuthClientId:
+    Description: The client ID used for Outlook OAuth
+    Type: String
+    NoEcho: true
+  OutlookOAuthClientSecret:
+    Description: The client ID used for Outlook OAuth
+    Type: String
+    NoEcho: true
 
 Resources:
+  # Operations on transactions - Lambda functions
   YetiApiLoadTransactions:
     Type: AWS::Serverless::Function
     Properties:
@@ -30,6 +39,42 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
+  YetiApiCloseTransaction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-CloseTransaction
+      Handler: yeti_api.close_transaction
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        CloseTransaction:
+          Type: Api
+          Properties:
+            Path: /transactions/close
+            Method: put
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+  YetiApiReopenTransaction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-ReopenTransaction
+      Handler: yeti_api.reopen_transaction
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        ReopenTransaction:
+          Type: Api
+          Properties:
+            Path: /transactions/reopen
+            Method: put
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  # Outlook OAuth API - Lambda functions
   YetiApiOutlookOAuth:
     Type: AWS::Serverless::Function
     Properties:
@@ -47,40 +92,18 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
-  YetiApiCloseTransaction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-CloseTransaction
-      Handler: yeti_api.close_transaction
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        CloseTransaction:
-          Type: Api
-          Properties:
-            Path: /transactions/close/{transactionId}
-            Method: put
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
-  YetiApiReopenTransaction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-ReopenTransaction
-      Handler: yeti_api.reopen_transaction
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        ReopenTransaction:
-          Type: Api
-          Properties:
-            Path: /transactions/reopen/{transactionId}
-            Method: put
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource: '*'
+      Environment:
+        Variables:
+          OutlookOAuthClientIdCipherText:
+            Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
+          OutlookOAuthClientSecretCipherText:
+            Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
   YetiApiRefreshAccessToken:
     Type: AWS::Serverless::Function
     Properties:
@@ -98,7 +121,40 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource: '*'
+      Environment:
+        Variables:
+          OutlookOAuthClientIdCipherText:
+            Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
+          OutlookOAuthClientSecretCipherText:
+            Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
 
+  # Sensitive Information Encryption
+  EncryptedOutlookOAuthClientId:  #Get the cipher text with Fn::GetAtt: - <CustomResourceName> - CipherText
+    Type: AWS::CloudFormation::CustomResource
+    Version: "1.0"
+    Properties:
+      ServiceToken:
+        Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CloudFormationKMSResource
+      KeyId: arn:aws:kms:us-west-2:917309224575:key/f5166e7b-7f9d-4353-9099-9fff22e01f5d
+      PlainText:
+        Ref: OutlookOAuthClientId
+  EncryptedOutlookOAuthClientSecret:  #Get the cipher text with Fn::GetAtt: - <CustomResourceName> - CipherText
+    Type: AWS::CloudFormation::CustomResource
+    Version: "1.0"
+    Properties:
+      ServiceToken:
+        Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CloudFormationKMSResource
+      KeyId: arn:aws:kms:us-west-2:917309224575:key/f5166e7b-7f9d-4353-9099-9fff22e01f5d
+      PlainText:
+        Ref: OutlookOAuthClientSecret
+
+  # DynamoDB Tables
   YetiTransactionsTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -107,39 +163,16 @@ Resources:
       AttributeDefinitions:
         - AttributeName: "TransactionId"
           AttributeType: "S"
-        - AttributeName: "SenderFirstName"
-          AttributeType: "S"
-        - AttributeName: "SenderLastName"
-          AttributeType: "S"
-        - AttributeName: "SenderEmail"
+        - AttributeName: "TransactionPlatform"
           AttributeType: "S"
       KeySchema:
         - AttributeName: "TransactionId"
           KeyType: "HASH"
+        - AttributeName: "TransactionPlatform"
+          KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
-      GlobalSecondaryIndexes:
-        - IndexName: "TransactionsBySenderNameIndex"
-          KeySchema:
-            - AttributeName: "SenderFirstName"
-              KeyType: "HASH"
-            - AttributeName: "SenderLastName"
-              KeyType: "RANGE"
-          Projection:
-            ProjectionType: ALL
-          ProvisionedThroughput:
-            ReadCapacityUnits: "3"
-            WriteCapacityUnits: "3"
-        - IndexName: "TransactionsBySenderEmailIndex"
-          KeySchema:
-            - AttributeName: "SenderEmail"
-              KeyType: "HASH"
-          Projection:
-            ProjectionType: ALL
-          ProvisionedThroughput:
-            ReadCapacityUnits: "3"
-            WriteCapacityUnits: "3"
   YetiLoginsTable:
     Type: "AWS::DynamoDB::Table"
     Properties:

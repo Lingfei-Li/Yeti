@@ -5,6 +5,7 @@ import requests
 
 from dynamodb import logins_table
 import constants as constants
+import utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -24,10 +25,6 @@ class AuthVerifyResult:
 
 
 class OutlookAuthorizer:
-    # Client ID and secret
-    client_id = '1420c3c4-8202-411f-870d-64b6166fd980'
-    client_secret = 'rFSZQ47995(}]hmfsbqXDL%'
-
     # Constant strings for OAuth2 flow
     # The OAuth authority
     authority = 'https://login.microsoftonline.com'
@@ -46,19 +43,37 @@ class OutlookAuthorizer:
     scopes = ['openid',
               'offline_access',
               'User.Read',
-              'Mail.Read',
-              'Calendars.Read',
-              'Contacts.Read']
+              'Mail.Read'
+              ]
+
+    # Client ID and secret
+    # client_id = '1420c3c4-8202-411f-870d-64b6166fd980'
+    # client_secret = 'rFSZQ47995(}]hmfsbqXDL%'
+    @staticmethod
+    def get_client_credentials():
+        try:
+            client_id = utils.decrypt_for_key('OutlookOAuthClientIdCipherText').decode('utf-8')
+            client_secret = utils.decrypt_for_key('OutlookOAuthClientSecretCipherText').decode('utf-8')
+        except Exception as e:
+            logger.error("Failed to decode Outlook OAuth credentials. Exception: {}".format(e))
+            return None, None
+        return client_id, client_secret
 
     @staticmethod
     def outlook_oauth(auth_code):
+        client_id, client_secret = OutlookAuthorizer.get_client_credentials()
+        logger.info("client id {}, client secret {}".format(client_id, client_secret))
+        if not client_id or not client_secret:
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error, message='Outlook OAuth client credentials are not properly set. Please check your Lambda '
+                                                                                              'function environment variable or CloudFormation stack parameter')
+
         # Build the post form for the token request
         post_data = {'grant_type': 'authorization_code',
                      'code': auth_code,
                      'redirect_uri': OutlookAuthorizer.redirect_url,
                      'scope': ' '.join(str(i) for i in OutlookAuthorizer.scopes),
-                     'client_id': OutlookAuthorizer.client_id,
-                     'client_secret': OutlookAuthorizer.client_secret
+                     'client_id': client_id,
+                     'client_secret': client_secret
                      }
 
         r = requests.post(OutlookAuthorizer.token_url, data=post_data)
@@ -67,21 +82,26 @@ class OutlookAuthorizer:
             result_data = r.json()
         except Exception as e:
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
-                                                                                                                                                               r.text, e))
+                                                                                                                                                              r.text, e))
         if 'error' in result_data and result_data['error']:
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: "
-                                                                                                    "{}".format(result_data['error_description']))
+                                                                                                   "{}".format(result_data['error_description']))
         return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token retrieved successfully", data=r.json())
 
     @staticmethod
     def refresh_token(refresh_token):
+        client_id, client_secret = OutlookAuthorizer.get_client_credentials()
+        logger.info("client id {}, client secret {}".format(client_id, client_secret))
+        if not client_id or not client_secret:
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error, message='Outlook OAuth client credentials are not properly set')
+
         # Build the post form for the token request
         post_data = {'grant_type': 'refresh_token',
                      'refresh_token': refresh_token,
                      'redirect_uri': OutlookAuthorizer.redirect_url,
                      'scope': ' '.join(str(i) for i in OutlookAuthorizer.scopes),
-                     'client_id': OutlookAuthorizer.client_id,
-                     'client_secret': OutlookAuthorizer.client_secret
+                     'client_id': client_id,
+                     'client_secret': client_secret
                      }
 
         r = requests.post(OutlookAuthorizer.token_url, data=post_data)
@@ -90,11 +110,11 @@ class OutlookAuthorizer:
             result_data = r.json()
         except Exception as e:
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
-                                                                                                                                                               r.text, e))
+                                                                                                                                                              r.text, e))
 
         if 'error' in result_data and result_data['error']:
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: "
-                                                                                                    "{}".format(result_data['error_description']))
+                                                                                                   "{}".format(result_data['error_description']))
         return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token refreshed successfully", data=r.json())
 
 

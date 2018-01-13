@@ -104,7 +104,7 @@ paths:
       tags:
         - "transaction"
       parameters:
-        - name: "LoginEmail"
+        - name: "login-email"
           in: "header"
           description: "The login email associated with the access token"
           required: true
@@ -164,12 +164,12 @@ paths:
               type: "string"
             Access-Control-Allow-Origin:
               type: "string"
-  /transactions/close/{transactionId}:
+  /transactions/close:
     put:
       tags:
         - "transaction"
       parameters:
-        - name: "LoginEmail"
+        - name: "login-email"
           in: "header"
           description: "The login email associated with the access token"
           required: true
@@ -179,6 +179,11 @@ paths:
           description: "A JWT token that authenticates and authorizes the user. "
           required: true
           type: "string"
+        - in: "body"
+          name: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/CloseReopenTransactionRequest"
       responses:
         200:
           description: "Successful request"
@@ -227,12 +232,12 @@ paths:
               type: "string"
             Access-Control-Allow-Origin:
               type: "string"
-  /transactions/reopen/{transactionId}:
+  /transactions/reopen:
     put:
       tags:
         - "transaction"
       parameters:
-        - name: "LoginEmail"
+        - name: "login-email"
           in: "header"
           description: "The login email associated with the access token"
           required: true
@@ -242,6 +247,11 @@ paths:
           description: "A JWT token that authenticates and authorizes the user. "
           required: true
           type: "string"
+        - in: "body"
+          name: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/CloseReopenTransactionRequest"
       responses:
         200:
           description: "Successful request"
@@ -300,9 +310,9 @@ definitions:
   RefreshAccessTokenRequestBody:
     type: "object"
     properties:
-      accessToken:
+      loginEmail:
         type: "string"
-      refreshToken:
+      accessToken:
         type: "string"
   RefreshAccessTokenResponse:
     type: "object"
@@ -310,6 +320,13 @@ definitions:
       message:
         type: "string"
       accessToken:
+        type: "string"
+  CloseReopenTransactionRequest:
+    type: "object"
+    properties:
+      transactionId:
+        type: "string"
+      transactionPlatform:
         type: "string"
   Transactions:
     type: "object"
@@ -325,29 +342,27 @@ definitions:
     properties:
       TransactionId:
         type: "string"
+      TransactionPlatform:
+        type: "string"
       Amount:
         type: "integer"
         format: "int64"
-      Status:
+      StatusCode:
         type: "integer"
         format: "int64"
-      TranasctionType:
+      Comments:
         type: "integer"
         format: "int64"
-      PaymentUnixTimestamp:
+      TransactionUnixTimestamp:
         type: "integer"
         format: "int64"
-      PaymentMethod:
+      FriendId:
         type: "string"
-      SenderEmail:
+      FriendName:
         type: "string"
-      SenderFirstName:
+      UserEmail:
         type: "string"
-      SenderLastName:
-        type: "string"
-      ReceiverEmail:
-        type: "string"
-      Notes:
+      UserId:
         type: "string"
       SerializedUpdateHistory:
         type: "string"

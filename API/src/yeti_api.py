@@ -118,11 +118,10 @@ def load_transactions(event, context):
         return error_response
 
     # Only return transactions sent to the login email
-    filter_expression = Key('ReceiverEmail').eq(login_email)
+    filter_expression = Key('UserEmail').eq(login_email)
 
     response = transactions_table.scan(
-        ProjectionExpression="SenderFirstName, SenderLastName, SenderEmail, Amount, TransactionUnixTimestamp, #_Status, TransactionType",
-        ExpressionAttributeNames={"#_Status": "Status"},
+        ProjectionExpression="UserId, FriendId, FriendName, Amount, TransactionUnixTimestamp, StatusCode, TransactionId, TransactionPlatform, Comments",
         FilterExpression=filter_expression
     )
 
@@ -144,25 +143,37 @@ def close_transaction(event, context):
 
     # Get transaction id from path parameter
     try:
-        transaction_id = event['pathParameters']['transactionId']
-        logger.info('closing transaction id: {}'.format(transaction_id))
-    except (KeyError, TypeError):
-        return api_response.client_error("Cannot read property 'transactionId' from path parameters. ")
+        body = json.loads(event['body'])
+    except (KeyError, TypeError, ValueError):  # By default Lambda sets the body to None if it's left empty -> TypeError
+        logger.info("Cannot parse request body to JSON object. ")
+        return api_response.client_error("Cannot parse request body to JSON object. ")
+    try:
+        transaction_id = body['transactionId']
+        transaction_platform = body['transactionPlatform']
+        logger.info('closing transaction id: {}, platform: {}'.format(transaction_id, transaction_platform))
+    except KeyError:
+        return api_response.client_error("Cannot read property 'transactionId' or 'transactionPlatform' from path parameters. ")
 
     # Check if the transaction id exists
     try:
-        response = transactions_table.get_item(Key={'TransactionId': transaction_id})
+        response = transactions_table.get_item(
+            Key={
+                'TransactionId': transaction_id,
+                'TransactionPlatform': transaction_platform
+            }
+        )
     except ClientError as e:
         logger.info(e.response['Error']['Message'])
         return api_response.internal_error(e.response['Error']['Message'])
     if 'Item' not in response or not response['Item']:
-        return api_response.not_found("TransactionId {} doesn't exist".format(transaction_id))
+        return api_response.not_found("TransactionId {} at TransactionPlatform {} doesn't exist".format(transaction_id, transaction_platform))
 
     # Update the StatusCode of the transaction.
     # Currently, it doesn't check for current StatusCode. Simply overrides the status to completed
     transactions_table.update_item(
         Key={
             'TransactionId': transaction_id,
+            'TransactionPlatform': transaction_platform
         },
         UpdateExpression="set StatusCode = :s",
         ExpressionAttributeValues={
@@ -170,8 +181,8 @@ def close_transaction(event, context):
         }
     )
 
-    logger.info("Transaction {} closed successfully".format(transaction_id))
-    return api_response.ok_no_data("Transaction {} closed successfully".format(transaction_id))
+    logger.info("Transaction [ id: {}, platform: {} ] closed successfully".format(transaction_id, transaction_platform))
+    return api_response.ok_no_data("Transaction [ id: {}, platform: {} ] closed successfully".format(transaction_id, transaction_platform))
 
 
 def reopen_transaction(event, context):
@@ -181,14 +192,25 @@ def reopen_transaction(event, context):
 
     # Get transaction id from path parameter
     try:
-        transaction_id = event['pathParameters']['transactionId']
-        logger.info('closing transaction id: {}'.format(transaction_id))
-    except (KeyError, TypeError):
-        return api_response.client_error("Cannot read property 'transactionId' from path parameters. ")
+        body = json.loads(event['body'])
+    except (KeyError, TypeError, ValueError):  # By default Lambda sets the body to None if it's left empty -> TypeError
+        logger.info("Cannot parse request body to JSON object. ")
+        return api_response.client_error("Cannot parse request body to JSON object. ")
+    try:
+        transaction_id = body['transactionId']
+        transaction_platform = body['transactionPlatform']
+        logger.info('closing transaction id: {}, platform: {}'.format(transaction_id, transaction_platform))
+    except KeyError:
+        return api_response.client_error("Cannot read property 'transactionId' or 'transactionPlatform' from path parameters. ")
 
     # Check if the transaction id exists
     try:
-        response = transactions_table.get_item(Key={'TransactionId': transaction_id})
+        response = transactions_table.get_item(
+            Key={
+                'TransactionId': transaction_id,
+                'TransactionPlatform': transaction_platform
+            }
+        )
     except ClientError as e:
         logger.info(e.response['Error']['Message'])
         return api_response.internal_error(e.response['Error']['Message'])
@@ -200,6 +222,7 @@ def reopen_transaction(event, context):
     transactions_table.update_item(
         Key={
             'TransactionId': transaction_id,
+            'TransactionPlatform': transaction_platform
         },
         UpdateExpression="set StatusCode = :s",
         ExpressionAttributeValues={
@@ -207,11 +230,20 @@ def reopen_transaction(event, context):
         }
     )
 
-    logger.info("Transaction {} re-opened successfully".format(transaction_id))
-    return api_response.ok_no_data("Transaction {} re-opened successfully".format(transaction_id))
+    logger.info("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
+    return api_response.ok_no_data("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
 
 
 def refresh_access_token(event, context):
+    """ Lambda handler for access token refresh API
+    Args:
+        event, context
+            Standard Lambda handler arguments.
+            Expects event['body'] to be non-None and is JSON parsable. Expects 'loginEmail' and 'accessToken' to be set in the body.
+    Returns:
+        response
+            The response returned to the API. The new access token can be found at response['accessToken']
+    """
     logger.debug("Got an token refresh request")
     try:
         body = json.loads(event['body'])
@@ -220,16 +252,15 @@ def refresh_access_token(event, context):
         return api_response.client_error("Cannot parse request body to JSON object. ")
 
     try:
+        login_email = body['loginEmail']
         old_access_token = body['accessToken']
-        old_refresh_token = body['refreshToken']
-        logger.debug('access_token: {}. refresh_token'.format(old_access_token, old_refresh_token))
     except KeyError:
-        return api_response.client_error("Cannot read property 'accessToken' or 'refreshToken' from the request body. ")
+        return api_response.client_error("Cannot read property 'loginEmail' or 'accessToken' from the request body. ")
 
     try:
         response = tokens_table.get_item(
             Key={
-                'AccessToken': old_access_token
+                'Email': login_email
             }
         )
     except ClientError as e:
@@ -237,19 +268,23 @@ def refresh_access_token(event, context):
         return api_response.internal_error(e.response['Error']['Message'])
 
     if 'Item' not in response or not response['Item']:
-        return api_response.not_found("Required access token does not exist")
+        return api_response.not_found("Required login email does not exist")
     else:
         item = response['Item']
+
     if 'RefreshToken' not in item or not item['RefreshToken']:
         logger.info("Refresh token doesn't exist for the required access token")
         return api_response.internal_error("Refresh token doesn't exist for the required access token")
+    old_refresh_token = item['RefreshToken']
 
-    if old_refresh_token != item['RefreshToken']:
-        return api_response.client_error("Provided refresh token doesn't match with the record in database")
+    if old_access_token != item['AccessToken']:
+        return api_response.client_error("Provided access token doesn't match with the record in database")
 
     # Get a new token with the old refresh token
     # The new tokens will be saved to DB by the helper
-    new_access_token, _ = refresh_access_token_helper(old_access_token, old_refresh_token)
+    error_response, new_access_token = refresh_access_token_helper(old_refresh_token)
+    if error_response:
+        return error_response
 
     response = {
         'message': 'Token refreshed successfully',
@@ -260,15 +295,24 @@ def refresh_access_token(event, context):
     return api_response.ok(response)
 
 
-def refresh_access_token_helper(old_access_token, old_refresh_token):
+def refresh_access_token_helper(old_refresh_token):
+    """ Get a new access token (Outlook OAuth) with the provided refresh token
+    Args:
+        old_refresh_token
+            The refresh token used to get the new token
+    Returns:
+        error_response, new_access_token
+            The first returned value is the API response constructed for error scenarios. A non-None value means there's an error that stops processing
+            The second return value is the actual new access token. The value is only set if the error_response is None.
+    """
     auth_verify_result = OutlookAuthorizer.refresh_token(old_refresh_token)
 
     if not auth_verify_result:
         logger.info("An error occurred authenticating user login request. Failed to retrieve auth verification result")
-        return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result")
+        return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result"), None
     elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
-        logger.info("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
-        return api_response.client_error("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
+        logger.info("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
+        return api_response.client_error("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
 
     auth_result_data = auth_verify_result.data
     new_access_token = auth_result_data['access_token']
@@ -278,7 +322,7 @@ def refresh_access_token_helper(old_access_token, old_refresh_token):
 
     if new_expiration_unix_timestamp < datetime.now().timestamp():
         logger.info("AccessToken already expired when retrieved from authCode")
-        return api_response.internal_error("AccessToken already expired when retrieved from refresh token")
+        return api_response.internal_error("AccessToken already expired when retrieved from refresh token"), None
 
     user = outlook_service.get_me(new_access_token)
     user_email = None
@@ -288,7 +332,7 @@ def refresh_access_token_helper(old_access_token, old_refresh_token):
         user_email = user['userPrincipalName']
     if not user_email:
         logger.error("Cannot determine user email. Auth result: {}".format(auth_result_data))
-        return api_response.internal_error("Cannot determine user email. Refresh token result: {}. Get user response: {}".format(auth_result_data, user))
+        return api_response.internal_error("Cannot determine user email. Refresh token result: {}. Get user response: {}".format(auth_result_data, user)), None
 
     # Save the new token to DDB
     logger.info("Saving new token to database")
@@ -300,31 +344,21 @@ def refresh_access_token_helper(old_access_token, old_refresh_token):
         'ExpirationUnixTimestamp': Decimal(new_expiration_unix_timestamp)
     })
 
-    # Update the status of the old token
-    logger.info("Updating old token")
-    tokens_table.update_item(
-        Key={
-            'AccessToken': old_access_token,
-        },
-        UpdateExpression="set StatusCode = :s",
-        ExpressionAttributeValues={
-            ':s': constants.AccessTokenStatusCode.refreshed
-        }
-    )
-
-    return new_access_token, new_refresh_token
+    return None, new_access_token
 
 
 def auth_non_login_event(event):
+    logger.info("Request Object: {}".format(event))
+    logger.info("Request Header: {}".format(event['headers']))
     try:
         authorization_header = event['headers']['Authorization']
     except (KeyError, TypeError):
         return api_response.client_error("Cannot read property 'Authorization' from request header"), None
 
     try:
-        login_email = event['headers']['LoginEmail']
+        login_email = event['headers']['login-email']
     except (KeyError, TypeError):
-        return api_response.client_error("Cannot read property 'LoginEmail' from request header"), None
+        return api_response.client_error("Cannot read property 'login-email' or 'loginemail' from request header"), None
 
     authorization_components = authorization_header.split(" ")
     if len(authorization_components) == 0 or authorization_components[0] != 'Bearer':
