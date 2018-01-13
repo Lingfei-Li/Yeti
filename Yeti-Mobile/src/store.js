@@ -14,6 +14,7 @@ import log from './components/log';
 class Store {
   @persist @observable email = 'No Email';
   @persist @observable token = '';
+  @persist('list') @observable transactions = [];
 }
 
 

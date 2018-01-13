@@ -50,7 +50,7 @@ export default class LoginPage extends React.Component {
           this.props.navigation.navigate('TransactionListView')
         })
         .catch((error) => {
-          log.log(`Call outlook_oauth, Error! Status Code: ${error.status}. Error: `, error.response);
+          log.log(`Call outlook_oauth, Failed! Status Code: ${error.status}. Error: `, error.response);
         })
     }
   };

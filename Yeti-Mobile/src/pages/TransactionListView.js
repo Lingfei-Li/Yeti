@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import {inject, observer} from "mobx-react";
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Header from '../components/Header';
@@ -17,72 +18,87 @@ import LambdaAPI from '../LambdaAPI';
 import log from '../components/log';
 
 
-const FakeData = [
-  {
-    name: 'John Doe',
-    email: 'john@amazon.com',
-    transactions: [
-      {
-        date: '12/25/2017',
-        amount: '59',
-        method: 'Venmo',
-        notes: '1 Crystal Mountain Ticket',
-        confirmed: false,
-      },
-      {
-        date: '12/25/2017',
-        amount: '118',
-        method: 'Venmo',
-        notes: '2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket',
-        confirmed: false,
-      },
-      {
-        date: '12/14/2017',
-        amount: '59',
-        method: 'Venmo',
-        notes: '1 Stevens Ticket',
-        confirmed: true,
-      }
-    ]
-  },
-  {
-    name: 'Homer Simpson',
-    email: 'homer@amazon.com',
-    transactions: [
-      {
-        date: '12/28/2017',
-        amount: '59',
-        method: 'Venmo',
-        notes: '1 Crystal Mountain Ticket',
-        confirmed: false,
-      },
-    ]
-  },
-  {
-    name: 'Tom Jerry',
-    email: 'tom@amazon.com',
-    transactions: [
-      {
-        date: '12/28/2017',
-        amount: '59',
-        method: 'Venmo',
-        notes: '1 Crystal Mountain Ticket',
-        confirmed: false,
-      },
-      {
-        date: '12/28/2017',
-        amount: '59',
-        method: 'Venmo',
-        notes: '1 Crystal Mountain Ticket',
-        confirmed: true,
-      },
-    ]
-  },
-];
+// const FakeData = [
+//   {
+//     name: 'John Doe',
+//     email: 'john@amazon.com',
+//     transactions: [
+//       {
+//         date: '12/25/2017',
+//         amount: '59',
+//         method: 'Venmo',
+//         notes: '1 Crystal Mountain Ticket',
+//         confirmed: false,
+//       },
+//       {
+//         date: '12/25/2017',
+//         amount: '118',
+//         method: 'Venmo',
+//         notes: '2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket',
+//         confirmed: false,
+//       },
+//       {
+//         date: '12/14/2017',
+//         amount: '59',
+//         method: 'Venmo',
+//         notes: '1 Stevens Ticket',
+//         confirmed: true,
+//       }
+//     ]
+//   },
+//   {
+//     name: 'Homer Simpson',
+//     email: 'homer@amazon.com',
+//     transactions: [
+//       {
+//         date: '12/28/2017',
+//         amount: '59',
+//         method: 'Venmo',
+//         notes: '1 Crystal Mountain Ticket',
+//         confirmed: false,
+//       },
+//     ]
+//   },
+//   {
+//     name: 'Tom Jerry',
+//     email: 'tom@amazon.com',
+//     transactions: [
+//       {
+//         date: '12/28/2017',
+//         amount: '59',
+//         method: 'Venmo',
+//         notes: '1 Crystal Mountain Ticket',
+//         confirmed: false,
+//       },
+//       {
+//         date: '12/28/2017',
+//         amount: '59',
+//         method: 'Venmo',
+//         notes: '1 Crystal Mountain Ticket',
+//         confirmed: true,
+//       },
+//     ]
+//   },
+// ];
 
+
+@inject("store")
+@observer
 export default class TransactionListView extends React.Component {
   constructor(props) {
     super(props);
+    this.fetchTransactions();
+  }
+
+  fetchTransactions() {
+    const {email, token} = this.props.store;
+    LambdaAPI.getAllTransactions(email, token)
+      .then((response) => {
+        log.log(response.data);
+      })
+      .catch((error) => {
+        log.log(`Call transactions, Failed! Status Code: ${error.status}. Error: `, error.response);
+      })
   }
 
   _renderItem(item) {
@@ -91,7 +107,8 @@ export default class TransactionListView extends React.Component {
       <TouchableOpacity
         onPress={() => this.props.navigation.navigate('TransactionDetails', {person: item})}
       >
-        <View style={{alignItems: 'flex-start', paddingLeft: '6%', paddingRight: '6%', paddingTop: 5, paddingBottom: 5}}>
+        <View
+          style={{alignItems: 'flex-start', paddingLeft: '6%', paddingRight: '6%', paddingTop: 5, paddingBottom: 5}}>
           <Text style={{fontWeight: 'bold'}}>{name}</Text>
           <Text>{email}</Text>
           <Text>    {transactions.length} Transactions</Text>
@@ -113,7 +130,7 @@ export default class TransactionListView extends React.Component {
         />
 
         <FlatList
-          data={FakeData}
+          data={this.props.store.transactions}
           renderItem={({item}) => this._renderItem(item)}
           keyExtractor={(_, i) => i}
 

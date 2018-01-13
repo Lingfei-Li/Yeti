@@ -2,7 +2,6 @@
  * Created by Yida Yin on 1/3/18
  */
 
-
 import React from 'react';
 import axios from 'axios';
 
@@ -15,7 +14,6 @@ export default class LambdaAPI {
       axios({
         method: 'POST',
         url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/user/login/outlook_oauth',
-        // url: 'http://httpbin.org/post',
         headers: {
           "content-type": "application/json",
         },
@@ -33,10 +31,8 @@ export default class LambdaAPI {
         method: 'GET',
         url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/transactions',
         headers: {
-          Authorization: "Bearer " + token
-        },
-        data: {
-          LoginEmail: email
+          "Authorization": "Bearer " + token,
+          "login-email": email,
         },
         timeout: connectionTimeOut,
       })
