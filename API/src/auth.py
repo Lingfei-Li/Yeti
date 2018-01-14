@@ -47,8 +47,6 @@ class OutlookAuthorizer:
               ]
 
     # Client ID and secret
-    # client_id = '1420c3c4-8202-411f-870d-64b6166fd980'
-    # client_secret = 'rFSZQ47995(}]hmfsbqXDL%'
     @staticmethod
     def get_client_credentials():
         try:
