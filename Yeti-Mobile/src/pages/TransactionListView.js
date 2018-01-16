@@ -6,80 +6,42 @@ import React from 'react';
 import {
   Text,
   View,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
 import {inject, observer} from "mobx-react";
+import ExpanableList from 'react-native-expandable-section-flatlist';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Header from '../components/Header';
 import LambdaAPI from '../LambdaAPI';
 import log from '../components/log';
+import {timeConverter} from '../utils';
 
 
-// const FakeData = [
-//   {
-//     name: 'John Doe',
-//     email: 'john@amazon.com',
-//     transactions: [
-//       {
-//         date: '12/25/2017',
-//         amount: '59',
-//         method: 'Venmo',
-//         notes: '1 Crystal Mountain Ticket',
-//         confirmed: false,
-//       },
-//       {
-//         date: '12/25/2017',
-//         amount: '118',
-//         method: 'Venmo',
-//         notes: '2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket; 2 More Crystal Mountain Ticket',
-//         confirmed: false,
-//       },
-//       {
-//         date: '12/14/2017',
-//         amount: '59',
-//         method: 'Venmo',
-//         notes: '1 Stevens Ticket',
-//         confirmed: true,
-//       }
-//     ]
-//   },
-//   {
-//     name: 'Homer Simpson',
-//     email: 'homer@amazon.com',
-//     transactions: [
-//       {
-//         date: '12/28/2017',
-//         amount: '59',
-//         method: 'Venmo',
-//         notes: '1 Crystal Mountain Ticket',
-//         confirmed: false,
-//       },
-//     ]
-//   },
-//   {
-//     name: 'Tom Jerry',
-//     email: 'tom@amazon.com',
-//     transactions: [
-//       {
-//         date: '12/28/2017',
-//         amount: '59',
-//         method: 'Venmo',
-//         notes: '1 Crystal Mountain Ticket',
-//         confirmed: false,
-//       },
-//       {
-//         date: '12/28/2017',
-//         amount: '59',
-//         method: 'Venmo',
-//         notes: '1 Crystal Mountain Ticket',
-//         confirmed: true,
-//       },
-//     ]
-//   },
-// ];
+groupTransactionsByDate = (transactions) => {
+  let groupedTransactions = {};
+  for (let i = 0; i < transactions.length; i++) {
+    const dateString = timeConverter(transactions[i].TransactionUnixTimestamp);
+    transactions[i].dateString = dateString;
+    if (dateString in groupedTransactions) {
+      groupedTransactions[dateString].push(transactions[i]);
+    } else {
+      groupedTransactions[dateString] = [transactions[i]];
+    }
+  }
+  // convert to expandable-section-flatlist format
+  let groupedTransactionsList = [];
+  for (let property in groupedTransactions) {
+    if (groupedTransactions.hasOwnProperty(property)) {
+      groupedTransactionsList.push({
+        header: property,
+        member: groupedTransactions[property]
+      })
+    }
+  }
+  return groupedTransactionsList;
+};
 
 
 @inject("store")
@@ -87,41 +49,76 @@ import log from '../components/log';
 export default class TransactionListView extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      refreshing: false
+    };
     this.fetchTransactions();
   }
 
   fetchTransactions() {
     const {email, token} = this.props.store;
+    if (!email || !token) {
+      return false;
+    }
     LambdaAPI.getAllTransactions(email, token)
       .then((response) => {
-        log.log(response.data);
+        const respData = JSON.parse(response.data);
+        this.props.store.transactions = respData.data;
+        log.log(`${respData.count} transactions.`);
+        log.log(respData);
+        this.setState({refreshing: false});
       })
       .catch((error) => {
         log.log(`Call transactions, Failed! Status Code: ${error.status}. Error: `, error.response);
+        this.setState({refreshing: false});
       })
   }
 
-  _renderItem(item) {
-    const {name, email, transactions} = item;
+  _renderSection = (section, sectionId) => {
+    return (
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        backgroundColor: '#BBCCEE',
+        height: 42,
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd'
+      }}>
+        <Text style={{fontWeight: 'bold', textAlign: 'center'}}>{section}</Text>
+      </View>
+    )
+  };
+
+  _renderRow = (rowItem, rowId, sectionId) => {
     return (
       <TouchableOpacity
-        onPress={() => this.props.navigation.navigate('TransactionDetails', {person: item})}
+        onPress={() => this.props.navigation.navigate('TransactionDetails', {item: rowItem})}
       >
-        <View
-          style={{alignItems: 'flex-start', paddingLeft: '6%', paddingRight: '6%', paddingTop: 5, paddingBottom: 5}}>
-          <Text style={{fontWeight: 'bold'}}>{name}</Text>
-          <Text>{email}</Text>
-          <Text>    {transactions.length} Transactions</Text>
+        <View style={{
+          backgroundColor: '#C1CEE6',
+          borderBottomWidth: 1,
+          borderBottomColor: '#ddd',
+          paddingLeft: 15,
+          padding: 5
+        }}>
+          <Text style={{fontWeight: 'bold'}}>{rowItem.FriendId}</Text>
+          <Text>{rowItem.FriendName}</Text>
+          <Text>{rowItem.TransactionPlatform}</Text>
         </View>
       </TouchableOpacity>
     )
-  }
-
-  _onTyping = (text) => {
-
   };
 
+  _onRefreshing() {
+    this.setState({refreshing: true});
+    log.log("Refreshing Transactions......");
+    this.fetchTransactions();
+  }
+
   render() {
+    const groupedTransactionsList = groupTransactionsByDate(this.props.store.transactions);
+
     return (
       <View style={styles.container}>
         <Header
@@ -129,13 +126,17 @@ export default class TransactionListView extends React.Component {
           rightItem={<Icon name={'gear'} size={26}/>}
         />
 
-        <FlatList
-          data={this.props.store.transactions}
-          renderItem={({item}) => this._renderItem(item)}
-          keyExtractor={(_, i) => i}
+        <ExpanableList
+          dataSource={groupedTransactionsList}
+          headerKey="header"
+          memberKey="member"
+          renderRow={this._renderRow}
+          renderSectionHeaderX={this._renderSection}
 
-          ItemSeparatorComponent={() => <View style={styles.separator}/>}
-          style={{width: '100%', height: '100%'}}
+          refreshing={this.state.refreshing}
+          onRefresh={this._onRefreshing.bind(this)}
+
+          style={{width: "100%"}}
         />
       </View>
     )

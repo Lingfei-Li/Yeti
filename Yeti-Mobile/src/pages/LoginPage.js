@@ -3,7 +3,13 @@
  */
 
 import React from 'react';
-import {Button, StyleSheet, Text, View} from 'react-native';
+import {
+  Button,
+  StyleSheet,
+  Text,
+  View,
+  ImageBackground,
+} from 'react-native';
 import {AuthSession} from 'expo';
 import {inject, observer} from "mobx-react";
 
@@ -59,7 +65,8 @@ export default class LoginPage extends React.Component {
     return (
       <View style={styles.container}>
         <Button title="Open Outlook Auth" onPress={this._handlePressAsync}/>
-        <Button title="Open Transaction List View" onPress={() => this.props.navigation.navigate('TransactionListView')}/>
+        <Button title="Open Transaction List View"
+                onPress={() => this.props.navigation.navigate('TransactionListView')}/>
         <Button title="Open Debug View" onPress={() => this.props.navigation.navigate('DebugView')}/>
       </View>
     );
@@ -69,7 +76,7 @@ export default class LoginPage extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#B0C1E5',
     alignItems: 'center',
     justifyContent: 'center',
   },

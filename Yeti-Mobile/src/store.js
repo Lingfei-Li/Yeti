@@ -9,7 +9,7 @@ import {observable, action, runInAction} from 'mobx';
 import {persist, create} from "mobx-persist";
 
 import log from './components/log';
-
+import {timeConverter} from './utils';
 
 class Store {
   @persist @observable email = 'No Email';
