@@ -1,6 +1,5 @@
 import logging
 import json
-from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from datetime import datetime
 import re
@@ -8,9 +7,8 @@ from decimal import Decimal
 from uuid import uuid4
 
 import api_response as api_response
-from dynamodb import transactions_table, logins_table, tokens_table
-from utils import replace_decimals
-from auth import LoginAuthorizer, OutlookAuthorizer
+from dynamodb import logins_table, tokens_table
+from auth import LoginAuthorizer, OutlookAuthorizer, GmailAuthorizer
 import constants as constants
 import outlook_service
 
@@ -32,7 +30,7 @@ def login_outlook_oauth(event, context):
     except KeyError:
         return api_response.client_error("Cannot read property 'authCode' from the request body. ")
 
-    auth_verify_result = OutlookAuthorizer.outlook_oauth(auth_code)
+    auth_verify_result = OutlookAuthorizer.get_credentials(auth_code)
 
     if not auth_verify_result:
         logger.info("An error occurred authenticating user login request. Failed to retrieve auth verification result")
@@ -41,11 +39,10 @@ def login_outlook_oauth(event, context):
         logger.info("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
         return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
 
-    auth_result_data = auth_verify_result.data
-    access_token = auth_result_data['access_token']
-    refresh_token = auth_result_data['refresh_token']
-    expires_in = auth_result_data['expires_in']
-    expiration_unix_timestamp = datetime.now().timestamp() + expires_in - 300  # current time + expiration - 5 minutes
+    oauth_credentials = auth_verify_result.credentials
+    access_token = oauth_credentials.access_token
+    refresh_token = oauth_credentials.refresh_token
+    expiration_unix_timestamp = oauth_credentials.expiration_unix_timestamp
 
     if expiration_unix_timestamp < datetime.now().timestamp():
         logger.info("AccessToken already expired when retrieved from authCode")
@@ -58,8 +55,8 @@ def login_outlook_oauth(event, context):
     if 'userPrincipalName' in user and user['userPrincipalName'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['userPrincipalName']):
         user_email = user['userPrincipalName']
     if not user_email:
-        logger.error("Cannot determine user email. Auth result: {}".format(auth_result_data))
-        return api_response.internal_error("Cannot determine user email. Auth result: {}".format(auth_result_data))
+        logger.error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
+        return api_response.internal_error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
 
     # Save token to DDB
     tokens_table.put_item(Item={
@@ -111,130 +108,7 @@ def login_outlook_oauth(event, context):
         return api_response.ok(response)
 
 
-def load_transactions(event, context):
-    print(event)
-    error_response, login_email = auth_non_login_event(event)
-    if error_response is not None:
-        return error_response
-
-    # Only return transactions sent to the login email
-    filter_expression = Key('UserEmail').eq(login_email)
-
-    response = transactions_table.scan(
-        ProjectionExpression="UserId, FriendId, FriendName, Amount, TransactionUnixTimestamp, StatusCode, TransactionId, TransactionPlatform, Comments",
-        FilterExpression=filter_expression
-    )
-
-    data = []
-    for item in response['Items']:
-        item = replace_decimals(item)
-        data.append(item)
-
-    return api_response.ok({
-        'count': response['Count'],
-        'data': data
-    })
-
-
-def close_transaction(event, context):
-    error_response, login_email = auth_non_login_event(event)
-    if error_response is not None:
-        return error_response
-
-    # Get transaction id from path parameter
-    try:
-        body = json.loads(event['body'])
-    except (KeyError, TypeError, ValueError):  # By default Lambda sets the body to None if it's left empty -> TypeError
-        logger.info("Cannot parse request body to JSON object. ")
-        return api_response.client_error("Cannot parse request body to JSON object. ")
-    try:
-        transaction_id = body['transactionId']
-        transaction_platform = body['transactionPlatform']
-        logger.info('closing transaction id: {}, platform: {}'.format(transaction_id, transaction_platform))
-    except KeyError:
-        return api_response.client_error("Cannot read property 'transactionId' or 'transactionPlatform' from path parameters. ")
-
-    # Check if the transaction id exists
-    try:
-        response = transactions_table.get_item(
-            Key={
-                'TransactionId': transaction_id,
-                'TransactionPlatform': transaction_platform
-            }
-        )
-    except ClientError as e:
-        logger.info(e.response['Error']['Message'])
-        return api_response.internal_error(e.response['Error']['Message'])
-    if 'Item' not in response or not response['Item']:
-        return api_response.not_found("TransactionId {} at TransactionPlatform {} doesn't exist".format(transaction_id, transaction_platform))
-
-    # Update the StatusCode of the transaction.
-    # Currently, it doesn't check for current StatusCode. Simply overrides the status to completed
-    transactions_table.update_item(
-        Key={
-            'TransactionId': transaction_id,
-            'TransactionPlatform': transaction_platform
-        },
-        UpdateExpression="set StatusCode = :s",
-        ExpressionAttributeValues={
-            ':s': constants.TransactionStatusCode.completed
-        }
-    )
-
-    logger.info("Transaction [ id: {}, platform: {} ] closed successfully".format(transaction_id, transaction_platform))
-    return api_response.ok_no_data("Transaction [ id: {}, platform: {} ] closed successfully".format(transaction_id, transaction_platform))
-
-
-def reopen_transaction(event, context):
-    error_response, login_email = auth_non_login_event(event)
-    if error_response is not None:
-        return error_response
-
-    # Get transaction id from path parameter
-    try:
-        body = json.loads(event['body'])
-    except (KeyError, TypeError, ValueError):  # By default Lambda sets the body to None if it's left empty -> TypeError
-        logger.info("Cannot parse request body to JSON object. ")
-        return api_response.client_error("Cannot parse request body to JSON object. ")
-    try:
-        transaction_id = body['transactionId']
-        transaction_platform = body['transactionPlatform']
-        logger.info('closing transaction id: {}, platform: {}'.format(transaction_id, transaction_platform))
-    except KeyError:
-        return api_response.client_error("Cannot read property 'transactionId' or 'transactionPlatform' from path parameters. ")
-
-    # Check if the transaction id exists
-    try:
-        response = transactions_table.get_item(
-            Key={
-                'TransactionId': transaction_id,
-                'TransactionPlatform': transaction_platform
-            }
-        )
-    except ClientError as e:
-        logger.info(e.response['Error']['Message'])
-        return api_response.internal_error(e.response['Error']['Message'])
-    if 'Item' not in response or not response['Item']:
-        return api_response.not_found("TransactionId {} doesn't exist".format(transaction_id))
-
-    # Update the StatusCode of the transaction.
-    # Currently, it doesn't check for current StatusCode. Simply overrides the status to open
-    transactions_table.update_item(
-        Key={
-            'TransactionId': transaction_id,
-            'TransactionPlatform': transaction_platform
-        },
-        UpdateExpression="set StatusCode = :s",
-        ExpressionAttributeValues={
-            ':s': constants.TransactionStatusCode.open
-        }
-    )
-
-    logger.info("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
-    return api_response.ok_no_data("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
-
-
-def refresh_access_token(event, context):
+def refresh_outlook_access_token(event, context):
     """ Lambda handler for access token refresh API
     Args:
         event, context
@@ -282,7 +156,7 @@ def refresh_access_token(event, context):
 
     # Get a new token with the old refresh token
     # The new tokens will be saved to DB by the helper
-    error_response, new_access_token = refresh_access_token_helper(old_refresh_token)
+    error_response, new_access_token = refresh_outlook_access_token_helper(old_refresh_token)
     if error_response:
         return error_response
 
@@ -295,7 +169,7 @@ def refresh_access_token(event, context):
     return api_response.ok(response)
 
 
-def refresh_access_token_helper(old_refresh_token):
+def refresh_outlook_access_token_helper(old_refresh_token):
     """ Get a new access token (Outlook OAuth) with the provided refresh token
     Args:
         old_refresh_token
@@ -314,11 +188,10 @@ def refresh_access_token_helper(old_refresh_token):
         logger.info("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
         return api_response.client_error("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
 
-    auth_result_data = auth_verify_result.data
-    new_access_token = auth_result_data['access_token']
-    new_refresh_token = auth_result_data['refresh_token']
-    new_expires_in = auth_result_data['expires_in']
-    new_expiration_unix_timestamp = datetime.now().timestamp() + new_expires_in - 300  # current time + expiration - 5 minutes
+    oauth_credentials = auth_verify_result.credentials
+    new_access_token = oauth_credentials.access_token
+    new_refresh_token = oauth_credentials.refresh_token
+    new_expiration_unix_timestamp = oauth_credentials.expiration_unix_timestamp
 
     if new_expiration_unix_timestamp < datetime.now().timestamp():
         logger.info("AccessToken already expired when retrieved from authCode")
@@ -331,8 +204,8 @@ def refresh_access_token_helper(old_refresh_token):
     if 'userPrincipalName' in user and user['userPrincipalName'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['userPrincipalName']):
         user_email = user['userPrincipalName']
     if not user_email:
-        logger.error("Cannot determine user email. Auth result: {}".format(auth_result_data))
-        return api_response.internal_error("Cannot determine user email. Refresh token result: {}. Get user response: {}".format(auth_result_data, user)), None
+        logger.error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
+        return api_response.internal_error("Cannot determine user email. Refresh token result: {}. Get user response: {}".format(auth_verify_result, user)), None
 
     # Save the new token to DDB
     logger.info("Saving new token to database")
@@ -341,39 +214,97 @@ def refresh_access_token_helper(old_refresh_token):
         "Email": user_email,
         'RefreshToken': new_refresh_token,
         'StatusCode': constants.AccessTokenStatusCode.valid,
-        'ExpirationUnixTimestamp': Decimal(new_expiration_unix_timestamp)
+        'ExpirationUnixTimestamp': Decimal(new_expiration_unix_timestamp),
+        'AuthType': 'oauth-outlook'
     })
 
     return None, new_access_token
 
 
-def auth_non_login_event(event):
-    logger.info("Request Object: {}".format(event))
-    logger.info("Request Header: {}".format(event['headers']))
+def login_gmail_oauth(event, context):
+    logger.debug("Got a gmail auth request")
     try:
-        authorization_header = event['headers']['Authorization']
-    except (KeyError, TypeError):
-        return api_response.client_error("Cannot read property 'Authorization' from request header"), None
+        body = json.loads(event['body'])
+    except (KeyError, TypeError, ValueError):  # By default Lambda sets the body to None if it's left empty -> TypeError
+        logger.info("Cannot parse request body to JSON object. ")
+        return api_response.client_error("Cannot parse request body to JSON object. ")
 
     try:
-        login_email = event['headers']['login-email']
-    except (KeyError, TypeError):
-        return api_response.client_error("Cannot read property 'login-email' or 'loginemail' from request header"), None
+        auth_code = body['authCode']
+        logger.debug('authCode: {}'.format(auth_code))
+    except KeyError:
+        return api_response.client_error("Cannot read property 'authCode' from the request body. ")
 
-    authorization_components = authorization_header.split(" ")
-    if len(authorization_components) == 0 or authorization_components[0] != 'Bearer':
-        return api_response.client_error("Only 'Bearer' header type for Authorization is supported. Please set the Authorization header to 'Bearer <token>'"), None
-    if len(authorization_components) < 2 or not authorization_components[1]:
-        return api_response.client_error("Authorization token cannot be found"), None
-
-    token = authorization_components[1]
-
-    auth_verify_result = LoginAuthorizer.verify_jwt_token(login_email=login_email, token=token)
+    auth_verify_result = GmailAuthorizer.get_credentials(auth_code)
 
     if not auth_verify_result:
-        return api_response.internal_error("An error occurred when verifying token. Failed to retrieve auth verification result"), None
+        logger.info("An error occurred authenticating user login request. Failed to retrieve auth verification result")
+        return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result")
     elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
-        return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
+        logger.info("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
+        return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
 
-    return None, login_email
+    oauth_credentials = auth_verify_result.credentials
+    access_token = oauth_credentials.access_token
+    refresh_token = oauth_credentials.refresh_token
+    expiration_unix_timestamp = oauth_credentials.expiration_unix_timestamp
+    google_api_credentials = oauth_credentials.raw_credentials_obj
 
+    if expiration_unix_timestamp < datetime.now().timestamp():
+        logger.info("AccessToken already expired when retrieved from authCode")
+        return api_response.internal_error("AccessToken already expired when retrieved from authCode")
+
+    user_email = GmailAuthorizer.get_user_email(google_api_credentials)
+    if not user_email:
+        logger.error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
+        return api_response.internal_error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
+
+    # Save token to DDB
+    tokens_table.put_item(Item={
+        "Email": user_email,
+        'AccessToken': access_token,
+        'RefreshToken': refresh_token,
+        'StatusCode': constants.AccessTokenStatusCode.valid,
+        'ExpirationUnixTimestamp': Decimal(expiration_unix_timestamp),
+        'AuthType': 'oauth-gmail'
+    })
+
+    # Check if it's first time that this email logins
+    #  If yes, create an entry for the email with an UUID secret.
+    #  Otherwise, obtain the secret from the data item
+    # Create a jwt and return it to front end
+    try:
+        response = logins_table.get_item(
+            Key={
+                'Email': user_email
+            }
+        )
+    except ClientError as e:
+        logger.info(e.response['Error']['Message'])
+        return api_response.internal_error(e.response['Error']['Message'])
+    else:
+        if 'Item' not in response or not response['Item']:
+            item = {
+                "Email": user_email,
+                "Secret": str(uuid4())
+            }
+            logger.info("Constructed logins data item for first-time login: {}".format(item))
+
+            response = logins_table.put_item(
+                Item=item
+            )
+            logger.info("Successfully put logins data with response: {}".format(response))
+        else:
+            item = response['Item']
+        if 'Secret' not in item or not item['Secret']:
+            logger.error("Email {} exists but doesn't have a secret".format(user_email))
+            return api_response.internal_error("Cannot find secret for email {}".format(user_email))
+
+        response = {
+            'message': 'Outlook OAuth success',
+            'loginEmail': user_email,
+            'token': LoginAuthorizer.generate_jwt_token(login_email=user_email, secret=item['Secret'])
+        }
+
+        logger.info("Sending response: {}".format(response))
+        return api_response.ok(response)

@@ -26,7 +26,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-LoadTransactions
-      Handler: yeti_api.load_transactions
+      Handler: yeti_transactions_api.load_transactions
       Timeout: 10
       Runtime: python3.6
       Events:
@@ -43,7 +43,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-CloseTransaction
-      Handler: yeti_api.close_transaction
+      Handler: yeti_transactions_api.close_transaction
       Timeout: 10
       Runtime: python3.6
       Events:
@@ -60,7 +60,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-ReopenTransaction
-      Handler: yeti_api.reopen_transaction
+      Handler: yeti_transactions_api.reopen_transaction
       Timeout: 10
       Runtime: python3.6
       Events:
@@ -79,7 +79,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-OutlookOAuth
-      Handler: yeti_api.login_outlook_oauth
+      Handler: yeti_auth_api.login_outlook_oauth
       Timeout: 10
       Runtime: python3.6
       Events:
@@ -108,14 +108,14 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-RefreshAccessToken
-      Handler: yeti_api.refresh_access_token
+      Handler: yeti_auth_api.refresh_outlook_access_token
       Timeout: 10
       Runtime: python3.6
       Events:
         RefreshAccessToken:
           Type: Api
           Properties:
-            Path: /user/token/refresh_access_token
+            Path: /user/token/refresh_outlook_access_token
             Method: post
             RestApiId:
               Ref: ProjectYetiApi
@@ -133,6 +133,23 @@ Resources:
             Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
           OutlookOAuthClientSecretCipherText:
             Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
+  YetiApiGmailOAuth:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-GmailOAuth
+      Handler: yeti_auth_api.login_gmail_oauth
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        OutlookOAuthLogin:
+          Type: Api
+          Properties:
+            Path: /user/login/gmail_oauth
+            Method: post
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
 
   # Sensitive Information Encryption
   EncryptedOutlookOAuthClientId:  #Get the cipher text with Fn::GetAtt: - <CustomResourceName> - CipherText

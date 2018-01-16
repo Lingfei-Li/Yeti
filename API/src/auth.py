@@ -2,6 +2,12 @@ from botocore.exceptions import ClientError
 import logging
 import jwt
 import requests
+import httplib2
+from datetime import datetime
+from apiclient import errors
+
+from oauth2client.client import flow_from_clientsecrets
+from apiclient import discovery
 
 from dynamodb import logins_table
 import constants as constants
@@ -11,17 +17,29 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+class OAuthCredentials:
+    access_token = None
+    refresh_token = None
+    expiration_unix_timestamp = None
+    raw_credentials_obj = None
+
+    def __init__(self, access_token, refresh_token, expires_in, raw_credentials_obj=None):
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.expiration_unix_timestamp = datetime.now().timestamp() + expires_in - 300  # current time + expiration - 5 minutes
+        self.raw_credentials_obj = raw_credentials_obj
+
+
 class AuthVerifyResult:
     code = None
     message = None
-    token = None
-    data = None
+    credentials = None
 
-    def __init__(self, code, message="", token=None, data=None):
+    def __init__(self, code, message="", token=None, credentials=None):
         self.code = code
         self.message = message
         self.token = token
-        self.data = data
+        self.credentials = credentials
 
 
 class OutlookAuthorizer:
@@ -48,7 +66,7 @@ class OutlookAuthorizer:
 
     # Client ID and secret
     @staticmethod
-    def get_client_credentials():
+    def get_client_secrets_from_env():
         try:
             client_id = utils.decrypt_for_key('OutlookOAuthClientIdCipherText').decode('utf-8')
             client_secret = utils.decrypt_for_key('OutlookOAuthClientSecretCipherText').decode('utf-8')
@@ -58,12 +76,13 @@ class OutlookAuthorizer:
         return client_id, client_secret
 
     @staticmethod
-    def outlook_oauth(auth_code):
-        client_id, client_secret = OutlookAuthorizer.get_client_credentials()
+    def get_credentials(auth_code):
+        client_id, client_secret = OutlookAuthorizer.get_client_secrets_from_env()
         logger.info("client id {}, client secret {}".format(client_id, client_secret))
         if not client_id or not client_secret:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error, message='Outlook OAuth client credentials are not properly set. Please check your Lambda '
-                                                                                              'function environment variable or CloudFormation stack parameter')
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
+                                    message='Outlook OAuth client credentials are not properly set. Please check your Lambda function environment variable or CloudFormation '
+                                            'stack parameter')
 
         # Build the post form for the token request
         post_data = {'grant_type': 'authorization_code',
@@ -79,19 +98,27 @@ class OutlookAuthorizer:
         try:
             result_data = r.json()
         except Exception as e:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
-                                                                                                                                                              r.text, e))
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+                                    message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
+                                                                                                       r.text, e))
         if 'error' in result_data and result_data['error']:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: "
-                                                                                                   "{}".format(result_data['error_description']))
-        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token retrieved successfully", data=r.json())
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+                                    message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: {}".format(result_data['error_description']))
+
+        credentials = OAuthCredentials(access_token=result_data['access_token'],
+                                       refresh_token=result_data['refresh_token'],
+                                       expires_in=result_data['expires_in'])
+        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
+                                message="Token retrieved successfully",
+                                credentials=credentials)
 
     @staticmethod
     def refresh_token(refresh_token):
-        client_id, client_secret = OutlookAuthorizer.get_client_credentials()
+        client_id, client_secret = OutlookAuthorizer.get_client_secrets_from_env()
         logger.info("client id {}, client secret {}".format(client_id, client_secret))
         if not client_id or not client_secret:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error, message='Outlook OAuth client credentials are not properly set')
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
+                                    message='Outlook OAuth client credentials are not properly set')
 
         # Build the post form for the token request
         post_data = {'grant_type': 'refresh_token',
@@ -107,13 +134,71 @@ class OutlookAuthorizer:
         try:
             result_data = r.json()
         except Exception as e:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
-                                                                                                                                                              r.text, e))
-
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+                                    message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code, r.text, e))
         if 'error' in result_data and result_data['error']:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid, message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: "
-                                                                                                   "{}".format(result_data['error_description']))
-        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token refreshed successfully", data=r.json())
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+                                    message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: {}".format(result_data['error_description']))
+
+        credentials = OAuthCredentials(access_token=result_data['access_token'],
+                                       refresh_token=result_data['refresh_token'],
+                                       expires_in=result_data['expires_in'])
+        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
+                                message="Token retrieved successfully",
+                                credentials=credentials)
+
+
+class GmailAuthorizer:
+    CLIENT_SECRETS_LOCATION = './gmail_client_secret.json'
+    REDIRECT_URI = 'http://oauth2.example.com/callback'
+    SCOPES = [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        # Add other requested scopes.
+    ]
+
+    @staticmethod
+    def get_user_email(credentials):
+        try:
+            user_info_service = discovery.build(
+                serviceName='oauth2',
+                version='v2',
+                http=credentials.authorize(httplib2.Http()))
+            user_info = user_info_service.userinfo().get().execute()
+            user_email = user_info.get('email')
+            return user_email
+        except Exception as e:
+            logging.error('Failed to get user email. Exception: {}'.format(e))
+            return None
+
+    @staticmethod
+    def get_credentials(auth_code):
+        try:
+            # Exchange code for token
+            flow = flow_from_clientsecrets(GmailAuthorizer.CLIENT_SECRETS_LOCATION, ' '.join(GmailAuthorizer.SCOPES))
+            flow.redirect_uri = GmailAuthorizer.REDIRECT_URI
+            google_api_credentials = flow.step2_exchange(auth_code)
+            if google_api_credentials.refresh_token is None:
+                logging.info("Refresh token is missing: {}".format(google_api_credentials.refresh_token))
+                logging.info("Access token: {}".format(google_api_credentials.access_token))
+                logging.info("Expiry : {}".format(google_api_credentials.token_expiry))
+                return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_missing,
+                                        message="Refresh token is missing from credentials")
+
+            # Transform the Google API credentials object to Yeti standard credentials
+            credentials = OAuthCredentials(access_token=google_api_credentials.get_access_token()['access_token'],
+                                           refresh_token=google_api_credentials.refresh_token,
+                                           expires_in=google_api_credentials.get_access_token()['expires_in'],
+                                           raw_credentials_obj=google_api_credentials)
+
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
+                                    message="Token retrieved successfully",
+                                    credentials=credentials)
+        except Exception as e:
+            logging.error('An error occurred during code exchange.')
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+                                    message='Error retrieving token. Exception: {}'.format(e))
 
 
 class LoginAuthorizer:
@@ -150,10 +235,10 @@ class LoginAuthorizer:
 
         try:
             token = token.strip()
-            data = jwt.decode(token, secret)
-            token_login_email = data['login_email']
+            decoded_token = jwt.decode(token, secret)
+            token_login_email = decoded_token['login_email']
             if not token_login_email or token_login_email != login_email:
-                return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_invalid, message="Token's login_email is empty or doesn't match header's login_email", data=data)
+                return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_invalid, message="Token's login_email is empty or doesn't match header's login_email")
         except jwt.DecodeError:
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_invalid, message="Token validation failed")
-        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token validation succeeded", data=data)
+        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token validation succeeded")

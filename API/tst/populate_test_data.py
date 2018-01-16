@@ -34,13 +34,13 @@ users = [
 ]
 
 locations = [
-    'stevens',
-    'snoqualmie',
-    'crystal mountain',
-    'mount rainier'
+    'Stevens',
+    'Snoqualmie',
+    'Crystal Mountain',
+    'Mt Rainier'
 ]
 
-data_count = 200
+data_count = 100
 
 random.seed(0)
 
