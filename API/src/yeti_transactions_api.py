@@ -15,7 +15,7 @@ logger.setLevel(logging.INFO)
 
 def load_transactions(event, context):
     print(event)
-    error_response, login_email = auth_non_login_event(event)
+    error_response, login_email = LoginAuthorizer.auth_non_login_event(event)
     if error_response is not None:
         return error_response
 
@@ -39,7 +39,7 @@ def load_transactions(event, context):
 
 
 def close_transaction(event, context):
-    error_response, login_email = auth_non_login_event(event)
+    error_response, login_email = LoginAuthorizer.auth_non_login_event(event)
     if error_response is not None:
         return error_response
 
@@ -88,7 +88,7 @@ def close_transaction(event, context):
 
 
 def reopen_transaction(event, context):
-    error_response, login_email = auth_non_login_event(event)
+    error_response, login_email = LoginAuthorizer.auth_non_login_event(event)
     if error_response is not None:
         return error_response
 
@@ -135,32 +135,4 @@ def reopen_transaction(event, context):
     logger.info("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
     return api_response.ok_no_data("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
 
-
-def auth_non_login_event(event):
-    try:
-        authorization_header = event['headers']['Authorization']
-    except (KeyError, TypeError):
-        return api_response.client_error("Cannot read property 'Authorization' from request header"), None
-
-    try:
-        login_email = event['headers']['login-email']
-    except (KeyError, TypeError):
-        return api_response.client_error("Cannot read property 'login-email' or 'loginemail' from request header"), None
-
-    authorization_components = authorization_header.split(" ")
-    if len(authorization_components) == 0 or authorization_components[0] != 'Bearer':
-        return api_response.client_error("Only 'Bearer' header type for Authorization is supported. Please set the Authorization header to 'Bearer <token>'"), None
-    if len(authorization_components) < 2 or not authorization_components[1]:
-        return api_response.client_error("Authorization token cannot be found"), None
-
-    token = authorization_components[1]
-
-    auth_verify_result = LoginAuthorizer.verify_jwt_token(login_email=login_email, token=token)
-
-    if not auth_verify_result:
-        return api_response.internal_error("An error occurred when verifying token. Failed to retrieve auth verification result"), None
-    elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
-        return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
-
-    return None, login_email
 
