@@ -24,17 +24,22 @@ class OAuthCredentials:
     expiration_unix_timestamp = None
     raw_credentials_obj = None
 
-    def __init__(self, access_token, refresh_token, expires_in, raw_credentials_obj=None):
+    def __init__(self, access_token, refresh_token, expires_in=None, expiration_datetime=None, raw_credentials_obj=None):
         self.access_token = access_token
         self.refresh_token = refresh_token
-        self.expiration_unix_timestamp = datetime.now().timestamp() + expires_in - 300  # current time + expiration - 5 minutes
+        if not expiration_datetime:
+            self.expiration_unix_timestamp = datetime.now().timestamp() + expires_in - 300  # current time + expiration - 5 minutes
+        elif not expires_in:
+            self.expiration_unix_timestamp = expiration_datetime.timestamp()
+        else:
+            raise Exception("One of expires_in and expiration_datetime must be provided")
         self.raw_credentials_obj = raw_credentials_obj
 
 
 class AuthVerifyResult:
     code = None
     message = None
-    credentials = None
+    credentials = None  # class:OAuthCredentials
 
     def __init__(self, code, message="", token=None, credentials=None):
         self.code = code
@@ -181,16 +186,15 @@ class GmailAuthorizer:
             flow.redirect_uri = GmailAuthorizer.REDIRECT_URI
             google_api_credentials = flow.step2_exchange(auth_code)
             if google_api_credentials.refresh_token is None:
-                logging.info("Refresh token is missing: {}".format(google_api_credentials.refresh_token))
-                logging.info("Access token: {}".format(google_api_credentials.access_token))
-                logging.info("Expiry : {}".format(google_api_credentials.token_expiry))
-                return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_missing,
-                                        message="Refresh token is missing from credentials")
+                logging.info("The returned credentials don't contain a refresh token")
+
+            logger.info(google_api_credentials.access_token)
+            logger.info(google_api_credentials.token_expiry)
 
             # Transform the Google API credentials object to Yeti standard credentials
-            credentials = OAuthCredentials(access_token=google_api_credentials.get_access_token()['access_token'],
+            credentials = OAuthCredentials(access_token=google_api_credentials.access_token,
                                            refresh_token=google_api_credentials.refresh_token,
-                                           expires_in=google_api_credentials.get_access_token()['expires_in'],
+                                           expiration_datetime=google_api_credentials.token_expiry,
                                            raw_credentials_obj=google_api_credentials)
 
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,

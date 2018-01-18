@@ -64,7 +64,8 @@ def login_outlook_oauth(event, context):
         'AccessToken': access_token,
         'RefreshToken': refresh_token,
         'StatusCode': constants.AccessTokenStatusCode.valid,
-        'ExpirationUnixTimestamp': Decimal(expiration_unix_timestamp)
+        'ExpirationUnixTimestamp': Decimal(expiration_unix_timestamp),
+        'AuthType': 'oauth-outlook'
     })
 
     # Check if it's first time that this email logins
@@ -259,15 +260,44 @@ def login_gmail_oauth(event, context):
         logger.error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
         return api_response.internal_error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
 
-    # Save token to DDB
-    tokens_table.put_item(Item={
-        "Email": user_email,
-        'AccessToken': access_token,
-        'RefreshToken': refresh_token,
-        'StatusCode': constants.AccessTokenStatusCode.valid,
-        'ExpirationUnixTimestamp': Decimal(expiration_unix_timestamp),
-        'AuthType': 'oauth-gmail'
-    })
+    # Save/Update token to DDB
+    try:
+        response = tokens_table.get_item(
+            Key={
+                'Email': user_email
+            }
+        )
+    except ClientError as e:
+        logger.info(e.response['Error']['Message'])
+        return api_response.internal_error(e.response['Error']['Message'])
+    else:
+        if 'Item' not in response or not response['Item']:
+            if not refresh_token:
+                # TODO: If the returned credentials and database token item doesn't contain refresh token, we may want to force request a refresh token, not simply throw an error.
+                return api_response.internal_error("Cannot determine refresh token for the email: {}. Cannot find refresh token in either oauth credential or database"
+                                                   .format(user_email))
+            tokens_table.put_item(Item={
+                "Email": user_email,
+                'AccessToken': access_token,
+                'RefreshToken': refresh_token,
+                'StatusCode': constants.AccessTokenStatusCode.valid,
+                'ExpirationUnixTimestamp': Decimal(expiration_unix_timestamp),
+                'AuthType': 'oauth-gmail'
+            })
+            logger.info("Successfully put token data")
+        else:
+            # Note: don't update refresh token
+            tokens_table.update_item(
+                Key={
+                    'Email': user_email
+                },
+                UpdateExpression="set AccessToken=:t, StatusCode=:s, ExpirationUnixTimestamp=:e",
+                ExpressionAttributeValues={
+                    ':t': access_token,
+                    ':s': constants.AccessTokenStatusCode.valid,
+                    ':e': Decimal(expiration_unix_timestamp)
+                }
+            )
 
     # Check if it's first time that this email logins
     #  If yes, create an entry for the email with an UUID secret.
