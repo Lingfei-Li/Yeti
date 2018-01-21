@@ -20,6 +20,12 @@ import {timeConverter} from '../utils';
 
 
 groupTransactionsByDate = (transactions) => {
+  // sort transactions by UnixTimestamp
+  transactions = transactions.sort(
+    function(a, b) {
+      return a.TransactionUnixTimestamp <= b.TransactionUnixTimestamp;
+    });
+
   let groupedTransactions = {};
   for (let i = 0; i < transactions.length; i++) {
     const dateString = timeConverter(transactions[i].TransactionUnixTimestamp);
