@@ -1,11 +1,15 @@
 import html2text
 import re
+import logging
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # Venmo Naming Conventions:
 # First/Last Name - Letters Only
 # Username - letters, numbers, (-), 5-16 in length
 # payment ID seems to be 19 in length - Need to verify
+
 
 # parses email in html format and returns a hash of key/value pairs derived from the email
 def parse(email_html_format):
@@ -15,19 +19,16 @@ def parse(email_html_format):
     h.ignore_links = False
     h.body_width = 300
     email_md = h.handle(email_html_format)
-    # print email_md
 
-    # print email_html_format
     transaction_information.update(parse_payer_information(email_md)) # gather my_venmo_id, payer_venmo_id, payer_name, amount
     transaction_information.update(parse_time_amount_information(email_md)) # time, amount
     transaction_information.update(parse_comments((email_md)))
     transaction_information.update(parse_payment_id(email_md)) # payment_id
 
-    # print transaction_information
-
     return transaction_information
 
-#TODO: Need to merge regex, since all of them are next to each other and merging all regex makes matching "comments" field more reliable
+
+# TODO: Need to merge regex, since all of them are next to each other and merging all regex makes matching "comments" field more reliable
 def parse_payer_information(email):
     try:
         name_id_matching_pattern = "\[([a-zA-Z\ ]+)\]\(https:\/\/venmo\.com\/([a-zA-Z\-0-9]{5,16})\)"
@@ -39,12 +40,12 @@ def parse_payer_information(email):
         keys = ["venmo_name_1", "venmo_id_1", "action", "venmo_name_2", "venmo_id_2"]
         return append_key_value(keys, m)
     except AttributeError as e:
-        print("error parsing payer info")
-        print e
-        # print email
+        logger.error("error parsing payer info")
+        logger.error(e)
         return dict()
 
-#TODO: need to be more robust
+
+# TODO: need to be more robust
 def parse_time_amount_information(email):
     try:
         time_amount_regex = "!\[private\]\(https:\/\/s3\.amazonaws\.com\/venmo\/audience\/private\.png\) (\+|\\\-) \$([0-9]+\.[0-9]{2})"
@@ -55,12 +56,12 @@ def parse_time_amount_information(email):
         keys = ["operator", "amount"]
         return append_key_value(keys, m)
     except AttributeError as e:
-        print("error parsing time amount info")
-        print e
-        # print email
+        logger.error("error parsing time amount info")
+        logger.error(e)
         return dict()
 
-#TODO: Fix Comment
+
+# TODO: Fix Comment
 def parse_comments(email):
     # try:
     #     name_id_matching_pattern = "\[[a-zA-Z\ ]+\]\(https:\/\/venmo\.com\/[a-zA-Z\-0-9]{5,16}\)"
@@ -81,6 +82,7 @@ def parse_comments(email):
     #     return dict()
     return dict()
 
+
 def parse_payment_id(email):
     try:
         payment_id_regex = "Payment ID: ([0-9]{19})"
@@ -90,10 +92,10 @@ def parse_payment_id(email):
         keys = ["transaction_id"]
         return append_key_value(keys, m)
     except AttributeError as e:
-        print("error parsing transaction_id")
-        print e
-        # print email
+        logger.error("error parsing transaction_id")
+        logger.error(e)
         return dict()
+
 
 def append_key_value(keys, values):
     return dict((keys[i], values.group(i+1)) for i in range(0, len(keys)))

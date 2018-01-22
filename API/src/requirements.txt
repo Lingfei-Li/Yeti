@@ -2,3 +2,5 @@ uuid
 pyjwt
 requests
 google-api-python-client
+httplib2
+html2text

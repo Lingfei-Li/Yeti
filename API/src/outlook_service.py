@@ -53,25 +53,32 @@ def get_me(access_token):
         return "{0}: {1}".format(r.status_code, r.text)
 
 
-def get_messages_received_after(access_token, user_email, timestamp):
+def get_messages(access_token, user_email, last_processed_date_str_iso8601=None):
     get_messages_url = graph_endpoint.format('/me/mailfolders/inbox/messages')
 
-    # Use OData query parameters to control the results
-    #  - Only first 10 results returned
-    #  - Only return the ReceivedDateTime, Subject, and From fields
-    #  - Sort the results by the ReceivedDateTime field in descending order
+    # '$filter': 'ReceivedDateTime gt ' + timestamp + ' and ' + 'from eq \'venmo@venmo.co\'',
+    # The query parameter '$filter' is not supported with '$search'." therefore need to manually filter all email from venmo
 
-    #'$filter': 'ReceivedDateTime gt ' + timestamp + ' and ' + 'from eq \'venmo@venmo.co\'',
-    # "The query parameter '$filter' is not supported with '$search'.",
-    # '((ReceivedDateTime gt ' + timestamp + ") and  (From/EmailAddress/Address eq 'chloeosness@allstate.com))"
-    query_parameters = {'$filter': '((ReceivedDateTime gt ' + timestamp + ') and  (From/EmailAddress/Address eq \'venmo@venmo.com\'))',
-                        #query parameter '$filter' is not supported with '$search'." therefore need to manually filter all email from venmo
-                        '$select': 'receivedDateTime,subject,body,from',
-                        '$orderby': 'receivedDateTime DESC'}
+    select_expr = 'receivedDateTime,subject,body,from'
+    filter_expr = '(From/EmailAddress/Address eq \'venmo@venmo.com\')'
+    if last_processed_date_str_iso8601 is not None:
+        # Note the insertion order of the new expression. Fields in 'orderby' must come first in 'filter' and must be in the same order
+        # For details: https://stackoverflow.com/a/41026120/1387710
+        filter_expr = '(ReceivedDateTime gt {}) and '.format(last_processed_date_str_iso8601) + filter_expr
+        order_by_expr = 'receivedDateTime DESC'
+    else:
+        # Fields in 'order by' must be present in 'filter', otherwise Outlook complains "Inefficient Error".
+        # For details: https://stackoverflow.com/a/41026120/1387710
+        order_by_expr = 'From/EmailAddress/Address DESC'
+
+    query_parameters = {'$filter': filter_expr,
+                        '$select': select_expr,
+                        '$orderby': order_by_expr
+                        }
 
     r = make_api_call('GET', get_messages_url, access_token, user_email, parameters=query_parameters)
 
-    if (r.status_code == requests.codes.ok):
+    if r.status_code == requests.codes.ok:
         return r.json()
     else:
         return "{0}: {1}".format(r.status_code, r.text)
