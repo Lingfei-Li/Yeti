@@ -24,7 +24,7 @@ class OAuthCredentials:
     expiration_unix_timestamp = None
     raw_credentials_obj = None
 
-    def __init__(self, access_token, refresh_token, expires_in=None, expiration_datetime=None, raw_credentials_obj=None):
+    def __init__(self, access_token, refresh_token=None, expires_in=None, expiration_datetime=None, raw_credentials_obj=None):
         self.access_token = access_token
         self.refresh_token = refresh_token
         if not expiration_datetime:
@@ -204,6 +204,20 @@ class GmailAuthorizer:
             logging.error('An error occurred during code exchange.')
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
                                     message='Error retrieving token. Exception: {}'.format(e))
+
+    @staticmethod
+    def refresh_token(google_api_credentials):
+        try:
+            google_api_credentials.refresh(httplib2.Http())
+            credentials = OAuthCredentials(access_token=google_api_credentials.access_token,
+                                           expiration_datetime=google_api_credentials.token_expiry,
+                                           raw_credentials_obj=google_api_credentials)
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
+                                    message="Token retrieved successfully",
+                                    credentials=credentials)
+        except Exception as e:
+            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
+                                    message='Error refreshing token. Exception: {}'.format(e))
 
 
 class LoginAuthorizer:

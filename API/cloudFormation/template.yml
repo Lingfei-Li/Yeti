@@ -127,14 +127,14 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: YetiApi-RefreshAccessToken
-      Handler: yeti_auth_api.refresh_outlook_access_token
+      Handler: yeti_auth_api.refresh_access_token
       Timeout: 10
       Runtime: python3.6
       Events:
         RefreshAccessToken:
           Type: Api
           Properties:
-            Path: /user/token/refresh_outlook_access_token
+            Path: /user/token/refresh_access_token
             Method: post
             RestApiId:
               Ref: ProjectYetiApi

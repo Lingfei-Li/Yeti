@@ -86,7 +86,7 @@ def get_last_processed_datetime(user_email):
         return None
     if 'Item' not in response or not response['Item']:
         logger.info("Email {} doesn't exist in DynamoDB".format(user_email))
-        raise Exception("Email {} doesn't have a last processed date.".format(user_email))
+        raise Exception("Email {} doesn't exist in DynamoDB".format(user_email))
     if 'LastProcessedUnixTimestamp' not in response['Item'] or not response['Item']['LastProcessedUnixTimestamp']:
         logger.info("Email {} doesn't have a last processed date.".format(user_email))
         return None
