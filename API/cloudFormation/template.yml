@@ -51,7 +51,7 @@ Resources:
           Type: Api
           Properties:
             Path: /transactions/close
-            Method: put
+            Method: post
             RestApiId:
               Ref: ProjectYetiApi
       Policies:
@@ -68,7 +68,7 @@ Resources:
           Type: Api
           Properties:
             Path: /transactions/reopen
-            Method: put
+            Method: post
             RestApiId:
               Ref: ProjectYetiApi
       Policies:
