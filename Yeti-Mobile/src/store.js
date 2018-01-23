@@ -15,6 +15,22 @@ class Store {
   @persist @observable email = 'No Email';
   @persist @observable token = '';
   @persist('list') @observable transactions = [];
+
+  closeTransaction = (TransactionId, TransactionPlatform) => {
+    for (let i = 0; i < this.transactions.length; i++) {
+      if (this.transactions[i]["TransactionId"] === TransactionId && this.transactions[i]["TransactionPlatform"] === TransactionPlatform) {
+        this.transactions[i]["StatusCode"] = 1;
+      }
+    }
+  };
+
+  reopenTransaction = (TransactionId, TransactionPlatform) => {
+    for (let i = 0; i < this.transactions.length; i++) {
+      if (this.transactions[i]["TransactionId"] === TransactionId && this.transactions[i]["TransactionPlatform"] === TransactionPlatform) {
+        this.transactions[i]["StatusCode"] = 0;
+      }
+    }
+  };
 }
 
 

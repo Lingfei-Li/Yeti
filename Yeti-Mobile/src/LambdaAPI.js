@@ -38,4 +38,40 @@ export default class LambdaAPI {
       })
     )
   }
+
+  static closeTransaction(email, token, transactionId, transactionPlatform) {
+    return (
+      axios({
+        method: 'POST',
+        url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/transactions/close',
+        headers: {
+          "Authorization": "Bearer " + token,
+          "login-email": email,
+        },
+        data: {
+          transactionId: transactionId,
+          transactionPlatform: transactionPlatform
+        },
+        timeout: connectionTimeOut,
+      })
+    )
+  }
+
+  static reopenTransaction(email, token, transactionId, transactionPlatform) {
+    return (
+      axios({
+        method: 'POST',
+        url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/transactions/reopen',
+        headers: {
+          "Authorization": "Bearer " + token,
+          "login-email": email,
+        },
+        data: {
+          transactionId: transactionId,
+          transactionPlatform: transactionPlatform
+        },
+        timeout: connectionTimeOut,
+      })
+    )
+  }
 }
