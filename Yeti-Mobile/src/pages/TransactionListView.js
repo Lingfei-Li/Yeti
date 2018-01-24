@@ -7,6 +7,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
 } from 'react-native';
 import {inject, observer} from "mobx-react";
@@ -22,7 +23,7 @@ import {timeConverter} from '../utils';
 groupTransactionsByDate = (transactions) => {
   // sort transactions by UnixTimestamp
   transactions = transactions.sort(
-    function(a, b) {
+    function (a, b) {
       return a.TransactionUnixTimestamp <= b.TransactionUnixTimestamp;
     });
 
@@ -56,7 +57,8 @@ export default class TransactionListView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      refreshing: false
+      refreshing: false,
+      text: '',
     };
     this.fetchTransactions();
   }
@@ -122,8 +124,22 @@ export default class TransactionListView extends React.Component {
     this.fetchTransactions();
   }
 
+  _filterTransactions = (transaction) => {
+    const queries = this.state.text.toLowerCase().split(" ");
+    for (let i = 0; i < queries.length; i++) {
+      const inFriendName = transaction.FriendName.toLowerCase().includes(queries[i]);
+      const inFriendId = transaction.FriendId.toLowerCase().includes(queries[i]);
+      const inComments = transaction.Comments.toLowerCase().includes(queries[i]);
+      if (inFriendName || inFriendId || inComments) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   render() {
-    const groupedTransactionsList = groupTransactionsByDate(this.props.store.transactions);
+    const transactions = this.props.store.transactions.filter(this._filterTransactions);
+    const groupedTransactionsList = groupTransactionsByDate(transactions);
 
     return (
       <View style={styles.container}>
@@ -131,13 +147,19 @@ export default class TransactionListView extends React.Component {
           title='Transactions'
           rightItem={<Icon name={'gear'} size={26}/>}
         />
-
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Type here to Search!"
+          onChangeText={(text) => this.setState({text})}
+        />
         <ExpanableList
           dataSource={groupedTransactionsList}
           headerKey="header"
           memberKey="member"
           renderRow={this._renderRow}
           renderSectionHeaderX={this._renderSection}
+
+          isOpen={true}
 
           refreshing={this.state.refreshing}
           onRefresh={this._onRefreshing.bind(this)}
@@ -150,15 +172,23 @@ export default class TransactionListView extends React.Component {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  separator: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#dddddd'
-  },
-});
+    container: {
+      flex: 1,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    separator: {
+      height: 1,
+      width: '100%',
+      backgroundColor: '#dddddd'
+    },
+    searchBar: {
+      height: 40,
+      width: "100%",
+      padding: 5,
+      borderWidth: 5,
+      borderColor: "#E4E4E4",
+    },
+  })
+;
