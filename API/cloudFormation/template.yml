@@ -74,25 +74,6 @@ Resources:
       Policies:
         - AmazonDynamoDBFullAccess
 
-  # Operations on emails - Lambda functions
-  YetiApiTransformEmails:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-TransformEmails
-      Handler: yeti_email_api.transform_emails
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        TransformEmails:
-          Type: Api
-          Properties:
-            Path: /email/transform
-            Method: get
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
-
   # Outlook OAuth API - Lambda functions
   YetiApiOutlookOAuth:
     Type: AWS::Serverless::Function

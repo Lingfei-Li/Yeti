@@ -1,9 +1,9 @@
-import dynamodb
+import yeti_dynamodb
 
-response = dynamodb.transactions_table.scan()
+response = yeti_dynamodb.transactions_table.scan()
 
 for item in response['Items']:
-    response = dynamodb.transactions_table.delete_item(
+    response = yeti_dynamodb.transactions_table.delete_item(
         Key={
             "TransactionId": item['TransactionId'],
             "TransactionPlatform": item['TransactionPlatform']

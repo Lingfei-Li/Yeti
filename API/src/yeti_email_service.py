@@ -6,11 +6,11 @@ import traceback
 
 from decimal import Decimal
 
-import api_response as api_response
-from dynamodb import transactions_table, tokens_table
-from auth import LoginAuthorizer
+import yeti_api_response as api_response
+from yeti_dynamodb import transactions_table, tokens_table
+from yeti_auth_authorizers import LoginAuthorizer
 import outlook_service
-import email_parser
+import yeti_email_parser
 import re
 import datetime
 import time
@@ -23,25 +23,6 @@ logger.setLevel(logging.INFO)
 ############################
 YOU = "You "
 ISO8601_FORMAT_TEMPLATE = "%Y-%m-%dT%H:%M:%SZ"
-
-
-def transform_emails(event, context):
-    try:
-        logger.info("Got a transform email request: {}".format(event))
-        error_response, login_email = LoginAuthorizer.auth_non_login_event(event)
-        if error_response is not None:
-            return error_response
-
-        access_token = get_access_token_for_email(login_email)
-
-        # Transform logic for login_email
-        transform_emails_util(access_token, login_email)
-    except Exception as e:
-        print(traceback.format_exc())
-        logger.error("Error transforming emails: {}".format(e))
-        return api_response.internal_error("Error transforming emails: {}".format(e))
-
-    return api_response.ok_no_data("success")
 
 
 # method that takes access token and user email to transform new emails in given email account.
@@ -111,7 +92,7 @@ def put_last_processed_datetime(user_email, last_processed_unix_timestamp):
 
 def transform_email_to_transaction(user_email_address, email):
     logger.info("transform_email_to_transaction")
-    transaction = email_parser.parse(email['body']['content'])
+    transaction = yeti_email_parser.parse(email['body']['content'])
     logger.info("Transaction parsed: {} {}".format(transaction, not transaction))
     if not transaction:  # if empty transaction, means it's not a transaction email TODO: needs better handling here
         return 0
@@ -169,4 +150,7 @@ def get_access_token_for_email(email):
     if 'AccessToken' not in response['Item']:
         logger.info("AccessToken is missing for email {}".format(email))
         raise Exception("AccessToken is missing for email {}".format(email))
-    return response['Item']['AccessToken']
+    if 'ExpirationUnixTimestamp' not in response['Item']:
+        logger.info("ExpirationUnixTimestamp is missing for email {}".format(email))
+        raise Exception("ExpirationUnixTimestamp is missing for email {}".format(email))
+    return response['Item']['AccessToken'], response['Item']['ExpirationUnixTimestamp']

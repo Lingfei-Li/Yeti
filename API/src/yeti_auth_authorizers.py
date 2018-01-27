@@ -9,10 +9,10 @@ from apiclient import errors
 from oauth2client.client import flow_from_clientsecrets
 from apiclient import discovery
 
-from dynamodb import logins_table
-import constants as constants
-import utils
-import api_response
+from yeti_dynamodb import logins_table
+import yeti_constants as constants
+import yeti_common_utils
+import yeti_api_response
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -74,8 +74,8 @@ class OutlookAuthorizer:
     @staticmethod
     def get_client_secrets_from_env():
         try:
-            client_id = utils.decrypt_for_key('OutlookOAuthClientIdCipherText').decode('utf-8')
-            client_secret = utils.decrypt_for_key('OutlookOAuthClientSecretCipherText').decode('utf-8')
+            client_id = yeti_common_utils.decrypt_for_key('OutlookOAuthClientIdCipherText').decode('utf-8')
+            client_secret = yeti_common_utils.decrypt_for_key('OutlookOAuthClientSecretCipherText').decode('utf-8')
         except Exception as e:
             logger.error("Failed to decode Outlook OAuth credentials. Exception: {}".format(e))
             return None, None
@@ -226,27 +226,27 @@ class LoginAuthorizer:
         try:
             authorization_header = event['headers']['Authorization']
         except (KeyError, TypeError):
-            return api_response.client_error("Cannot read property 'Authorization' from request header"), None
+            return yeti_api_response.client_error("Cannot read property 'Authorization' from request header"), None
 
         try:
             login_email = event['headers']['login-email']
         except (KeyError, TypeError):
-            return api_response.client_error("Cannot read property 'login-email' or 'loginemail' from request header"), None
+            return yeti_api_response.client_error("Cannot read property 'login-email' or 'loginemail' from request header"), None
 
         authorization_components = authorization_header.split(" ")
         if len(authorization_components) == 0 or authorization_components[0] != 'Bearer':
-            return api_response.client_error("Only 'Bearer' header type for Authorization is supported. Please set the Authorization header to 'Bearer <token>'"), None
+            return yeti_api_response.client_error("Only 'Bearer' header type for Authorization is supported. Please set the Authorization header to 'Bearer <token>'"), None
         if len(authorization_components) < 2 or not authorization_components[1]:
-            return api_response.client_error("Authorization token cannot be found"), None
+            return yeti_api_response.client_error("Authorization token cannot be found"), None
 
         token = authorization_components[1]
 
         auth_verify_result = LoginAuthorizer.verify_jwt_token(login_email=login_email, token=token)
 
         if not auth_verify_result:
-            return api_response.internal_error("An error occurred when verifying token. Failed to retrieve auth verification result"), None
+            return yeti_api_response.internal_error("An error occurred when verifying token. Failed to retrieve auth verification result"), None
         elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
-            return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
+            return yeti_api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
 
         return None, login_email
 

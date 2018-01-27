@@ -1,5 +1,5 @@
 import json
-import dynamodb
+import yeti_dynamodb
 from test_data import transactions, logins
 import random
 import pprint
@@ -65,7 +65,7 @@ for i in range(data_count):
         "Comments": "1 Ski Tickets for " + location,
         "SerializedUpdateHistory": "[]"
     }
-    response = dynamodb.transactions_table.put_item(
+    response = yeti_dynamodb.transactions_table.put_item(
         Item=data
     )
 

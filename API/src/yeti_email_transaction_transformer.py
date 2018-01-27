@@ -1,9 +1,9 @@
 import logging
 import outlook_service
-from auth import LoginAuthorizer, OutlookAuthorizer
-import email_parser
+from yeti_auth_authorizers import LoginAuthorizer, OutlookAuthorizer
+import yeti_email_parser
 import time
-from dynamodb import transactions_table, logins_table, tokens_table
+from yeti_dynamodb import transactions_table, logins_table, tokens_table
 
 from botocore.exceptions import ClientError
 
@@ -66,7 +66,7 @@ def record_last_timestamp(emails):
 def transform_email_to_transaction(email):
     email_body = email['body']['content']
     logger.info("-----")
-    email_parser.parse(email_body)
+    yeti_email_parser.parse(email_body)
     logger.info("****")
 
 

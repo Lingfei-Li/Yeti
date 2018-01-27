@@ -1,5 +1,5 @@
 import pprint
-import dynamodb
+import yeti_dynamodb
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
@@ -19,7 +19,7 @@ pp = pprint.PrettyPrinter(indent=2)
 
 user_email = 'email1'
 try:
-    response = dynamodb.logins_table.get_item(
+    response = yeti_dynamodb.logins_table.get_item(
         Key={
             'Email': user_email
         }
