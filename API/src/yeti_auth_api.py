@@ -11,8 +11,10 @@ from yeti_dynamodb import logins_table, tokens_table
 from yeti_auth_authorizers import LoginAuthorizer, OutlookAuthorizer, GmailAuthorizer
 import yeti_constants as constants
 import outlook_service
+import yeti_auth_service
+import yeti_exceptions
 
-logger = logging.getLogger()
+logger = logging.getLogger("YetiAuthApi")
 logger.setLevel(logging.INFO)
 
 
@@ -128,65 +130,17 @@ def refresh_access_token(event, context):
 
     try:
         login_email = body['loginEmail']
-        old_access_token = body['accessToken']
     except KeyError:
         return api_response.client_error("Cannot read property 'loginEmail' or 'accessToken' from the request body. ")
 
     try:
-        response = tokens_table.get_item(
-            Key={
-                'Email': login_email
-            }
-        )
-    except ClientError as e:
-        logger.info(e.response['Error']['Message'])
-        return api_response.internal_error(e.response['Error']['Message'])
-
-    if 'Item' not in response or not response['Item']:
-        return api_response.not_found("Required login email does not exist")
-
-    item = response['Item']
-
-    if 'RefreshToken' not in item or not item['RefreshToken']:
-        logger.info("Refresh token doesn't exist for the required access token")
-        return api_response.internal_error("Refresh token doesn't exist for the required access token")
-    old_refresh_token = item['RefreshToken']
-
-    if old_access_token != item['AccessToken']:
-        return api_response.client_error("Provided access token doesn't match with the record in database")
-
-    if 'AuthType' not in item or not item['AuthType']:
-        domain = login_email.strip().split("@")[1]
-        if domain == 'gmail.com':
-            auth_type = 'oauth-gmail'
-        elif domain == 'outlook.com':
-            auth_type = 'oauth-outlook'
-        else:
-            logger.info("AuthType is not defined for email {}. Cannot determine auth type from its domain {}.".format(login_email, domain))
-            return api_response.internal_error("Cannot determine OAuth type of the login email: {}".format(login_email))
-        logger.info("AuthType is not defined for email {}. Using email domain to derive auth type: {}".format(login_email, auth_type))
-
-    auth_type = item['AuthType']
-    if auth_type == 'oauth-outlook':
-        # Get a new token with the old refresh token
-        # The new tokens will be saved to DB by the helper
-        error_response, new_access_token = refresh_outlook_access_token_helper(login_email, old_refresh_token)
-        if error_response:
-            return error_response
-    elif auth_type == 'oauth-gmail':
-        from oauth2client.client import OAuth2Credentials
-        try:
-            google_api_credentials = OAuth2Credentials.from_json(item['JSONRepresentation'])
-        except Exception as e:
-            logger.info("Failed to deserialize oauth2client from JSON representation. Error: {}".format(e))
-            return api_response.internal_error("Failed to deserialize oauth2client from JSON representation. Error: {}".format(e))
-
-        error_response, new_access_token = refresh_gmail_access_token_helper(login_email, google_api_credentials, old_refresh_token)
-        if error_response:
-            return error_response
-    else:
-        logger.info("AuthType {} is not supported.".format(auth_type))
-        return api_response.internal_error("AuthType {} is not supported.".format(auth_type))
+        new_access_token = yeti_auth_service.refresh_access_token(login_email)
+    except yeti_exceptions.YetiApiClientErrorException as e:
+        return api_response.client_error("Failed to refresh access token: {}".format(e))
+    except yeti_exceptions.YetiApiInternalErrorException as e:
+        return api_response.internal_error("Failed to refresh access token: {}".format(e))
+    except Exception as e:
+        return api_response.internal_error("Failed to refresh access token. Encountered unexpected error: {}".format(e))
 
     response = {
         'message': 'Token refreshed successfully',

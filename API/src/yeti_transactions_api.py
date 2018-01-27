@@ -2,18 +2,20 @@ import logging
 import json
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
+import traceback
+import datetime
 
 import yeti_api_response as api_response
-from yeti_dynamodb import transactions_table
+from yeti_dynamodb import transactions_table, tokens_table
 from yeti_common_utils import replace_decimals
 from yeti_auth_authorizers import LoginAuthorizer
 import yeti_constants as constants
 import yeti_email_service
-import traceback
-import datetime
+import yeti_auth_service
+import yeti_exceptions
 
 
-logger = logging.getLogger()
+logger = logging.getLogger("YetiTransactionsApi")
 logger.setLevel(logging.INFO)
 
 
@@ -26,35 +28,42 @@ def load_transactions(event, context):
 
     try:
         logger.info("Checking access token validity")
-        access_token, expiration = yeti_email_service.get_access_token_for_email(login_email)
-        if expiration > datetime.datetime.now().timestamp():
+        try:
+            access_token = yeti_auth_service.get_access_token_for_email(login_email)
+        except yeti_exceptions.YetiAuthTokenExpiredException:
             logger.info("Access token expired. Trying to refresh")
-            # TODO: Call Refresh token service
+            access_token = yeti_auth_service.refresh_access_token(login_email)
 
         logger.info("Load and transform emails")
         yeti_email_service.transform_emails_util(access_token, login_email)
+
+        # Only return transactions sent to the login email
+        filter_expression = Key('UserEmail').eq(login_email)
+
+        response = transactions_table.scan(
+            ProjectionExpression="UserId, FriendId, FriendName, Amount, TransactionUnixTimestamp, StatusCode, TransactionId, TransactionPlatform, Comments, Direction",
+            FilterExpression=filter_expression
+        )
+
+        data = []
+        for item in response['Items']:
+            item = replace_decimals(item)
+            data.append(item)
+
+        return api_response.ok({
+            'count': response['Count'],
+            'data': data
+        })
+
+    except yeti_exceptions.YetiApiClientErrorException as e:
+        print(traceback.format_exc())
+        return api_response.client_error("Error transforming emails: {}".format(e))
+    except yeti_exceptions.YetiApiInternalErrorException as e:
+        print(traceback.format_exc())
+        return api_response.internal_error("Error transforming emails: {}".format(e))
     except Exception as e:
         print(traceback.format_exc())
-        logger.error("Error transforming emails: {}".format(e))
-        return api_response.internal_error("Error transforming emails: {}".format(e))
-
-    # Only return transactions sent to the login email
-    filter_expression = Key('UserEmail').eq(login_email)
-
-    response = transactions_table.scan(
-        ProjectionExpression="UserId, FriendId, FriendName, Amount, TransactionUnixTimestamp, StatusCode, TransactionId, TransactionPlatform, Comments",
-        FilterExpression=filter_expression
-    )
-
-    data = []
-    for item in response['Items']:
-        item = replace_decimals(item)
-        data.append(item)
-
-    return api_response.ok({
-        'count': response['Count'],
-        'data': data
-    })
+        return api_response.internal_error("Error transforming emails. Encountered unexpected error: {}".format(e))
 
 
 def close_transaction(event, context):
@@ -153,5 +162,4 @@ def reopen_transaction(event, context):
 
     logger.info("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
     return api_response.ok_no_data("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
-
 

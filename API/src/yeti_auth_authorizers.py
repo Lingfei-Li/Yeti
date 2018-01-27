@@ -14,7 +14,7 @@ import yeti_constants as constants
 import yeti_common_utils
 import yeti_api_response
 
-logger = logging.getLogger()
+logger = logging.getLogger("YetiAuthAuthorizers")
 logger.setLevel(logging.INFO)
 
 
@@ -124,7 +124,7 @@ class OutlookAuthorizer:
         logger.info("client id {}, client secret {}".format(client_id, client_secret))
         if not client_id or not client_secret:
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
-                                    message='Outlook OAuth client credentials are not properly set')
+                                    message='Outlook OAuth client ID or client secret is not properly set')
 
         # Build the post form for the token request
         post_data = {'grant_type': 'refresh_token',

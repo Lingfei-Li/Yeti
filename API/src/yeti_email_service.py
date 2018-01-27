@@ -15,7 +15,7 @@ import re
 import datetime
 import time
 
-logger = logging.getLogger()
+logger = logging.getLogger("YetiEmailService")
 logger.setLevel(logging.INFO)
 
 ############################
@@ -136,21 +136,3 @@ def transform_email_to_transaction(user_email_address, email):
         return float(email_unix_timestamp_decimal)
 
 
-def get_access_token_for_email(email):
-    logger.info("get_token_for_email")
-    # TODO: Fine-Tune error handling here
-    try:
-        response = tokens_table.get_item(Key={'Email': email})
-    except ClientError as e:
-        logger.error("Encountered ClientError while retrieving access token for email: {}. Error: {}".format(email, e.response['Error']['Message']))
-        raise Exception("Encountered ClientError while retrieving access token for email: {}. Error: {}".format(email, e.response['Error']['Message']))
-    if 'Item' not in response or not response['Item']:
-        logger.info("Email {} doesn't exist in tokens table".format(email))
-        raise Exception("Email {} doesn't exist in tokens table".format(email))
-    if 'AccessToken' not in response['Item']:
-        logger.info("AccessToken is missing for email {}".format(email))
-        raise Exception("AccessToken is missing for email {}".format(email))
-    if 'ExpirationUnixTimestamp' not in response['Item']:
-        logger.info("ExpirationUnixTimestamp is missing for email {}".format(email))
-        raise Exception("ExpirationUnixTimestamp is missing for email {}".format(email))
-    return response['Item']['AccessToken'], response['Item']['ExpirationUnixTimestamp']

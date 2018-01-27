@@ -2,7 +2,7 @@ import html2text
 import re
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger("YetiEmailParser")
 logger.setLevel(logging.INFO)
 
 # Venmo Naming Conventions:

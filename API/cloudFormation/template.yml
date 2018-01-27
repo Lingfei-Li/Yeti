@@ -39,6 +39,18 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource: '*'
+      Environment:
+        Variables:
+          OutlookOAuthClientIdCipherText:
+            Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
+          OutlookOAuthClientSecretCipherText:
+            Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
   YetiApiCloseTransaction:
     Type: AWS::Serverless::Function
     Properties:
