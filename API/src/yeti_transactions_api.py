@@ -41,7 +41,6 @@ def load_transactions(event, context):
         filter_expression = Key('UserEmail').eq(login_email)
 
         response = transactions_table.scan(
-            ProjectionExpression="UserId, FriendId, FriendName, Amount, TransactionUnixTimestamp, StatusCode, TransactionId, TransactionPlatform, Comments, Direction",
             FilterExpression=filter_expression
         )
 

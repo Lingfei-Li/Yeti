@@ -1,14 +1,13 @@
 import logging
 from botocore.exceptions import ClientError
-
 from decimal import Decimal
+import datetime
+import time
 
 import yeti_exceptions
 from yeti_dynamodb import transactions_table, tokens_table
 import outlook_service
 import yeti_email_parser
-import datetime
-import time
 
 logger = logging.getLogger("YetiEmailService")
 logger.setLevel(logging.INFO)
@@ -67,11 +66,12 @@ def get_last_processed_datetime(user_email):
     if 'Item' not in response or not response['Item']:
         logger.info("Email {} doesn't exist in DynamoDB".format(user_email))
         raise yeti_exceptions.DatabaseAccessErrorException("Email {} doesn't exist in DynamoDB".format(user_email))
-    if 'LastProcessedUnixTimestamp' not in response['Item'] or not response['Item']['LastProcessedUnixTimestamp']:
-        logger.info("Email {} doesn't have a last processed date.".format(user_email))
-        raise yeti_exceptions.DatabaseAccessErrorException("Email {} doesn't have a last processed date.".format(user_email))
 
-    last_processed_unix_timestamp = response['Item']['LastProcessedUnixTimestamp']
+    if 'LastProcessedUnixTimestamp' not in response['Item'] or response['Item']['LastProcessedUnixTimestamp'] is None:
+        last_processed_unix_timestamp = 0
+    else:
+        last_processed_unix_timestamp = response['Item']['LastProcessedUnixTimestamp']
+
     return datetime.datetime.fromtimestamp(last_processed_unix_timestamp)
 
 
@@ -117,6 +117,8 @@ def transform_email_to_transaction(user_email_address, email):
     transaction_id = transaction['transaction_id']
     transaction_platform = 'venmo'
     amount = transaction['amount']
+    thumbnail_uri = transaction['thumbnail_uri']
+    comments = transaction['comments']
 
     email_received_date_str = email['receivedDateTime']  # 'receivedDateTime': '2018-01-15T16:31:46Z'
     email_unix_timestamp_decimal = "%.15g" % time.mktime(datetime.datetime.strptime(email_received_date_str, ISO8601_FORMAT_TEMPLATE).timetuple())
@@ -126,7 +128,7 @@ def transform_email_to_transaction(user_email_address, email):
     direction = 1 if (transaction['operator'] == "+") else 0
 
     # Check transaction existence. Only update database if the transaction is not seen before
-    response = tokens_table.get_item(Key={
+    response = transactions_table.get_item(Key={
                                          'TransactionId': transaction_id,
                                          'TransactionPlatform': transaction_platform
                                      })
@@ -135,7 +137,8 @@ def transform_email_to_transaction(user_email_address, email):
             "TransactionId": transaction_id,
             "TransactionPlatform": transaction_platform,
             "Amount": amount,
-            "Comments": "N/A",
+            "Comments": comments,
+            "ThumbnailURI": thumbnail_uri,
             "FriendId": friend_id,
             "FriendName": friend_name,
             "SerializedUpdateHistory": [],
