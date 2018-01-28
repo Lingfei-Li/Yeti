@@ -3,10 +3,9 @@ import json
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 import traceback
-import datetime
 
 import yeti_api_response as api_response
-from yeti_dynamodb import transactions_table, tokens_table
+from yeti_dynamodb import transactions_table
 from yeti_common_utils import replace_decimals
 from yeti_auth_authorizers import LoginAuthorizer
 import yeti_constants as constants
@@ -27,15 +26,16 @@ def load_transactions(event, context):
     logger.info("Loading transactions for {}".format(login_email))
 
     try:
-        logger.info("Checking access token validity")
         try:
+            logger.info("Retrieve and examine access token for email")
             access_token = yeti_auth_service.get_access_token_for_email(login_email)
+            logger.info("Load and transform emails")
+            yeti_email_service.transform_emails_util(access_token, login_email)
         except yeti_exceptions.YetiAuthTokenExpiredException:
             logger.info("Access token expired. Trying to refresh")
             access_token = yeti_auth_service.refresh_access_token(login_email)
-
-        logger.info("Load and transform emails")
-        yeti_email_service.transform_emails_util(access_token, login_email)
+            logger.info("Token refreshed. Load and transform emails")
+            yeti_email_service.transform_emails_util(access_token, login_email)
 
         # Only return transactions sent to the login email
         filter_expression = Key('UserEmail').eq(login_email)
@@ -56,13 +56,16 @@ def load_transactions(event, context):
         })
 
     except yeti_exceptions.YetiApiClientErrorException as e:
-        print(traceback.format_exc())
+        logger.error("Error transforming emails: {}".format(e))
+        logger.error(traceback.format_exc())
         return api_response.client_error("Error transforming emails: {}".format(e))
     except yeti_exceptions.YetiApiInternalErrorException as e:
-        print(traceback.format_exc())
+        logger.error("Error transforming emails: {}".format(e))
+        logger.error(traceback.format_exc())
         return api_response.internal_error("Error transforming emails: {}".format(e))
     except Exception as e:
-        print(traceback.format_exc())
+        logger.error("Error transforming emails. Encountered unexpected error: {}".format(e))
+        logger.error(traceback.format_exc())
         return api_response.internal_error("Error transforming emails. Encountered unexpected error: {}".format(e))
 
 
@@ -93,7 +96,7 @@ def close_transaction(event, context):
             }
         )
     except ClientError as e:
-        logger.info(e.response['Error']['Message'])
+        logger.error(e.response['Error']['Message'])
         return api_response.internal_error(e.response['Error']['Message'])
     if 'Item' not in response or not response['Item']:
         return api_response.not_found("TransactionId {} at TransactionPlatform {} doesn't exist".format(transaction_id, transaction_platform))
@@ -142,7 +145,7 @@ def reopen_transaction(event, context):
             }
         )
     except ClientError as e:
-        logger.info(e.response['Error']['Message'])
+        logger.error(e.response['Error']['Message'])
         return api_response.internal_error(e.response['Error']['Message'])
     if 'Item' not in response or not response['Item']:
         return api_response.not_found("TransactionId {} doesn't exist".format(transaction_id))

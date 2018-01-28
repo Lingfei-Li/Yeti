@@ -1,16 +1,11 @@
 import logging
-import json
 from botocore.exceptions import ClientError
 from datetime import datetime
-import re
 from decimal import Decimal
-from uuid import uuid4
 
-import yeti_api_response as api_response
-from yeti_dynamodb import logins_table, tokens_table
-from yeti_auth_authorizers import LoginAuthorizer, OutlookAuthorizer, GmailAuthorizer
+from yeti_dynamodb import tokens_table
+from yeti_auth_authorizers import OutlookAuthorizer, GmailAuthorizer
 import yeti_constants as constants
-import outlook_service
 import yeti_exceptions
 
 logger = logging.getLogger("YetiAuthService")
@@ -165,17 +160,11 @@ def refresh_gmail_access_token_helper(user_email, google_api_credentials, refres
 
 def get_access_token_for_email(email):
     """ Retrieve the stored access token for the given email
-    Args:
-        user_email, google_api_credentials, refresh_token
-            An Google's oauth2client.client.AccessTokenCredentials credential object used to refresh tokens
-            refresh_token is needed as the google_api_credentials might not have a refresh_token in its JSON representation (it's not the first Gmail login attempt for our APP)
-    Returns:
-        error_response, new_access_token
-            The first returned value is the API response constructed for error scenarios. A non-None value means there's an error that stops processing
-            The second return value is the actual new access token. The value is only set if the error_response is None.
-    Raises:
-        yeti_exceptions.YetiAuthTokenExpiredException
-            If the retrieved access token has expired or invalid for some reason, this exception will be thrown to make sure that the invalid token doesn't get passed around
+
+    :param email: the email address of the user
+    :return: new_access_token
+    :raise: yeti_exceptions.YetiAuthTokenExpiredException
+    :raise: yeti_exceptions.InternalErrorException
     """
 
     logger.info("Get access token for email: {}".format(email))
@@ -195,7 +184,8 @@ def get_access_token_for_email(email):
         logger.info("ExpirationUnixTimestamp is missing for email {}".format(email))
         raise yeti_exceptions.YetiApiInternalErrorException("ExpirationUnixTimestamp is missing for email {}".format(email))
 
-    if response['Item']['ExpirationUnixTimestamp'] >= datetime.now().timestamp():
+    # Check expiration
+    if response['Item']['ExpirationUnixTimestamp'] <= datetime.now().timestamp():
         raise yeti_exceptions.YetiAuthTokenExpiredException()
 
     # TODO: more sophisticated Gmail OAuth token expiration check using Google SDK

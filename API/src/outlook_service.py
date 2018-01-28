@@ -1,7 +1,7 @@
-# Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See LICENSE.txt in the project root for license information.
 import requests
 import uuid
 import json
+import yeti_exceptions
 
 graph_endpoint = 'https://graph.microsoft.com/v1.0{0}'
 
@@ -39,21 +39,46 @@ def make_api_call(method, url, token, user_email, payload=None, parameters=None)
 
 
 def get_me(access_token):
+    """
+    Get the user profile with the OAuth access token
+
+    :param access_token: the Outlook OAuth access token
+    :return: the user object that contains attributes like 'mail'
+    :raise: yeti_exceptions.YetiAuthTokenExpiredException()
+    :raise: yeti_exceptions.OutlookApiErrorException
+    """
     get_me_url = graph_endpoint.format('/me')
 
-    # Use OData query parameters to control the results
-    #  - Only return the displayName and mail fields
     query_parameters = {'$select': 'displayName,mail'}
 
     r = make_api_call('GET', get_me_url, access_token, "", parameters=query_parameters)
 
-    if r.status_code == requests.codes.ok:
-        return r.json()
-    else:
-        return "{0}: {1}".format(r.status_code, r.text)
+    try:
+        response = r.json()
+    except Exception as e:
+        raise yeti_exceptions.OutlookApiErrorException("Failed to transform response text to JSON: {}".format(e))
+
+    if r.status_code != requests.codes.ok or ('error' in response and response['error']):
+        if 'code' in response['error'] and response['error']['code'] == 'InvalidAuthenticationToken':
+            raise yeti_exceptions.YetiAuthTokenExpiredException()
+        else:
+            raise yeti_exceptions.OutlookApiErrorException("Failed to get user profile. Response: {}".format(response))
+    if 'value' not in response:
+        raise yeti_exceptions.OutlookApiErrorException("Failed to get user profile. 'value' is empty. Response: {}".format(response))
+    return response
 
 
 def get_messages(access_token, user_email, last_processed_date_str_iso8601=None):
+    """
+    Get the user profile with the OAuth access token
+
+    :param access_token: the Outlook OAuth access token
+    :param user_email: the email address of the user
+    :param last_processed_date_str_iso8601: the IOS8601 formatted date string for the last processed email date
+    :return: an array of email objects
+    :raise: yeti_exceptions.YetiAuthTokenExpiredException
+    :raise: yeti_exceptions.OutlookApiErrorException
+    """
     get_messages_url = graph_endpoint.format('/me/mailfolders/inbox/messages')
 
     # '$filter': 'ReceivedDateTime gt ' + timestamp + ' and ' + 'from eq \'venmo@venmo.co\'',
@@ -78,7 +103,17 @@ def get_messages(access_token, user_email, last_processed_date_str_iso8601=None)
 
     r = make_api_call('GET', get_messages_url, access_token, user_email, parameters=query_parameters)
 
-    if r.status_code == requests.codes.ok:
-        return r.json()
-    else:
-        return "{0}: {1}".format(r.status_code, r.text)
+    try:
+        response = r.json()
+    except Exception as e:
+        raise yeti_exceptions.OutlookApiErrorException("Failed to transform response text to JSON: {}".format(e))
+
+    if r.status_code != requests.codes.ok or ('error' in response and response['error']):
+        if 'code' in response['error'] and response['error']['code'] == 'InvalidAuthenticationToken':
+            raise yeti_exceptions.YetiAuthTokenExpiredException()
+        else:
+            raise yeti_exceptions.OutlookApiErrorException("Failed to get email messages. Response: {}".format(response))
+    if 'value' not in response:
+        raise yeti_exceptions.OutlookApiErrorException("Failed to get email messages. 'value' is empty. Response: {}".format(response))
+    new_emails = response['value']
+    return new_emails

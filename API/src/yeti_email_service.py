@@ -1,17 +1,12 @@
 import logging
-import json
-from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
-import traceback
 
 from decimal import Decimal
 
-import yeti_api_response as api_response
+import yeti_exceptions
 from yeti_dynamodb import transactions_table, tokens_table
-from yeti_auth_authorizers import LoginAuthorizer
 import outlook_service
 import yeti_email_parser
-import re
 import datetime
 import time
 
@@ -25,22 +20,21 @@ YOU = "You "
 ISO8601_FORMAT_TEMPLATE = "%Y-%m-%dT%H:%M:%SZ"
 
 
-# method that takes access token and user email to transform new emails in given email account.
-# Separated from transform_emails for easier local testing
 def transform_emails_util(access_token, user_email):
-    logger.info("transform_emails_util")
+    """
+    Fetch all new emails since the last processed date, then transform the emails to transactions data.
+
+    :param access_token: OAuth access token string
+    :param user_email: the email address of the user
+    """
+    logger.info("Getting emails")
 
     last_processed_datetime = get_last_processed_datetime(user_email)
     if last_processed_datetime is None:
-        response = outlook_service.get_messages(access_token, user_email)
+        new_emails = outlook_service.get_messages(access_token, user_email)
     else:
         last_processed_date_str_iso8601 = datetime.datetime.strftime(last_processed_datetime, ISO8601_FORMAT_TEMPLATE)
-        response = outlook_service.get_messages(access_token, user_email, last_processed_date_str_iso8601)
-
-    if 'value' not in response:
-        raise ValueError(response)
-
-    new_emails = response['value']
+        new_emails = outlook_service.get_messages(access_token, user_email, last_processed_date_str_iso8601)
 
     last_processed_unix_timestamp = 0
     for email in new_emails:
@@ -54,8 +48,13 @@ def transform_emails_util(access_token, user_email):
 
 # get timestamp of last processed transaction given email from ddb
 def get_last_processed_datetime(user_email):
+    """
+    Get the date (type: datetime) for the last processed email
+
+    :param user_email: the email address of the user
+    :return: the datetime of the last processed email
+    """
     logger.info("get_last_processed_datetime")
-    # TODO: Fine-Tune error handling here
     try:
         response = tokens_table.get_item(
             Key={
@@ -64,21 +63,20 @@ def get_last_processed_datetime(user_email):
         )
     except ClientError as e:
         logger.error("Error getting last processed date from DynamoDB for email: {}. Error: {}".format(user_email, e.response['Error']['Message']))
-        return None
+        raise yeti_exceptions.DatabaseAccessErrorException("Error getting last processed date for email: {}. Error: {}".format(user_email, e.response['Error']['Message']))
     if 'Item' not in response or not response['Item']:
         logger.info("Email {} doesn't exist in DynamoDB".format(user_email))
-        raise Exception("Email {} doesn't exist in DynamoDB".format(user_email))
+        raise yeti_exceptions.DatabaseAccessErrorException("Email {} doesn't exist in DynamoDB".format(user_email))
     if 'LastProcessedUnixTimestamp' not in response['Item'] or not response['Item']['LastProcessedUnixTimestamp']:
         logger.info("Email {} doesn't have a last processed date.".format(user_email))
-        return None
-    else:
-        last_processed_unix_timestamp = response['Item']['LastProcessedUnixTimestamp']
-        return datetime.datetime.fromtimestamp(last_processed_unix_timestamp)
+        raise yeti_exceptions.DatabaseAccessErrorException("Email {} doesn't have a last processed date.".format(user_email))
+
+    last_processed_unix_timestamp = response['Item']['LastProcessedUnixTimestamp']
+    return datetime.datetime.fromtimestamp(last_processed_unix_timestamp)
 
 
 def put_last_processed_datetime(user_email, last_processed_unix_timestamp):
     logger.info("put_last_processed_datetime")
-    # TODO: Fine-Tune error handling here
     tokens_table.update_item(
         Key={
             'Email': user_email
@@ -91,36 +89,52 @@ def put_last_processed_datetime(user_email, last_processed_unix_timestamp):
 
 
 def transform_email_to_transaction(user_email_address, email):
-    logger.info("transform_email_to_transaction")
-    transaction = yeti_email_parser.parse(email['body']['content'])
-    logger.info("Transaction parsed: {} {}".format(transaction, not transaction))
-    if not transaction:  # if empty transaction, means it's not a transaction email TODO: needs better handling here
+    """
+    Parse and transform the emails to transactions data model.
+
+    :param user_email_address: the email address of the user
+    :param email: the email (text) to be transformed
+    :return: the receive time (unix timestamp) of the email
+    """
+    try:
+        logger.info("Transform email to transaction")
+        transaction = yeti_email_parser.parse(email['body']['content'])
+        logger.info("Transaction parsed: {} {}".format(transaction, not transaction))
+    except yeti_exceptions.EmailTransformationErrorException as e:
+        logging.warning("Email failed to transform. Email object: {}. Error: {}".format(email, e))
         return 0
+
+    logger.info("Transaction parsed: {}".format(transaction))
+
+    if transaction['venmo_name_1'] == YOU:
+        user_id = transaction['venmo_id_1']
+        friend_name = transaction['venmo_name_2']
+        friend_id = transaction['venmo_id_2']
     else:
-        logger.info("Transaction parsed: {}".format(transaction))
+        user_id = transaction['venmo_id_2']
+        friend_name = transaction['venmo_name_1']
+        friend_id = transaction['venmo_id_1']
+    transaction_id = transaction['transaction_id']
+    transaction_platform = 'venmo'
+    amount = transaction['amount']
 
-        if transaction['venmo_name_1'] == YOU:
-            user_id = transaction['venmo_id_1']
-            friend_name = transaction['venmo_name_2']
-            friend_id = transaction['venmo_id_2']
-        else:
-            user_id = transaction['venmo_id_2']
-            friend_name = transaction['venmo_name_1']
-            friend_id = transaction['venmo_id_1']
+    email_received_date_str = email['receivedDateTime']  # 'receivedDateTime': '2018-01-15T16:31:46Z'
+    email_unix_timestamp_decimal = "%.15g" % time.mktime(datetime.datetime.strptime(email_received_date_str, ISO8601_FORMAT_TEMPLATE).timetuple())
+    # Convert normal 2018-01-15T16:31:46Z to unix
+    # converts float to decimal
 
-        email_received_date_str = email['receivedDateTime']  # 'receivedDateTime': '2018-01-15T16:31:46Z'
-        email_unix_timestamp_decimal = "%.15g" % time.mktime(datetime.datetime.strptime(email_received_date_str, ISO8601_FORMAT_TEMPLATE).timetuple())
-        # Convert normal 2018-01-15T16:31:46Z to unix
-        # converts float to decimal
-        logger.info(email_unix_timestamp_decimal)
+    direction = 1 if (transaction['operator'] == "+") else 0
 
-        direction = 1 if (transaction['operator'] == "+") else 0
-        logger.info(direction)
-
+    # Check transaction existence. Only update database if the transaction is not seen before
+    response = tokens_table.get_item(Key={
+                                         'TransactionId': transaction_id,
+                                         'TransactionPlatform': transaction_platform
+                                     })
+    if 'Item' not in response or not response['Item']:
         transaction_item = {
-            "TransactionId": transaction['transaction_id'],
-            "TransactionPlatform": "venmo",
-            "Amount": transaction['amount'],
+            "TransactionId": transaction_id,
+            "TransactionPlatform": transaction_platform,
+            "Amount": amount,
             "Comments": "N/A",
             "FriendId": friend_id,
             "FriendName": friend_name,
@@ -134,5 +148,8 @@ def transform_email_to_transaction(user_email_address, email):
         logger.info("Putting transaction item to table: \n{}".format(transaction_item))
         transactions_table.put_item(Item=transaction_item)
         return float(email_unix_timestamp_decimal)
+    else:
+        logger.info("Transaction [id: {}, platform: {}] is already in database, skipping...".format(transaction_id, transaction_platform))
+        return 0
 
 

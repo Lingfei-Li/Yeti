@@ -5,6 +5,7 @@ from datetime import datetime
 import re
 from decimal import Decimal
 from uuid import uuid4
+import traceback
 
 import yeti_api_response as api_response
 from yeti_dynamodb import logins_table, tokens_table
@@ -35,10 +36,12 @@ def login_outlook_oauth(event, context):
     auth_verify_result = OutlookAuthorizer.get_credentials(auth_code)
 
     if not auth_verify_result:
-        logger.info("An error occurred authenticating user login request. Failed to retrieve auth verification result")
+        logger.error(traceback.format_exc())
+        logger.error("An error occurred authenticating user login request. Failed to retrieve auth verification result")
         return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result")
     elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
-        logger.info("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
+        logger.error(traceback.format_exc())
+        logger.error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
         return api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message))
 
     oauth_credentials = auth_verify_result.credentials
@@ -57,6 +60,7 @@ def login_outlook_oauth(event, context):
     if 'userPrincipalName' in user and user['userPrincipalName'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['userPrincipalName']):
         user_email = user['userPrincipalName']
     if not user_email:
+        logger.error(traceback.format_exc())
         logger.error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
         return api_response.internal_error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
 
@@ -81,7 +85,8 @@ def login_outlook_oauth(event, context):
             }
         )
     except ClientError as e:
-        logger.info(e.response['Error']['Message'])
+        logger.error(traceback.format_exc())
+        logger.error(e.response['Error']['Message'])
         return api_response.internal_error(e.response['Error']['Message'])
     else:
         if 'Item' not in response or not response['Item']:
@@ -98,6 +103,7 @@ def login_outlook_oauth(event, context):
         else:
             item = response['Item']
         if 'Secret' not in item or not item['Secret']:
+            logger.error(traceback.format_exc())
             logger.error("Email {} exists but doesn't have a secret".format(user_email))
             return api_response.internal_error("Cannot find secret for email {}".format(user_email))
 
@@ -125,21 +131,30 @@ def refresh_access_token(event, context):
     try:
         body = json.loads(event['body'])
     except (KeyError, TypeError, ValueError):  # By default Lambda sets empty request body to None -> TypeError
-        logger.info("Cannot parse request body to JSON object. ")
+        logger.error(traceback.format_exc())
+        logger.error("Cannot parse request body to JSON object. ")
         return api_response.client_error("Cannot parse request body to JSON object. ")
 
     try:
         login_email = body['loginEmail']
     except KeyError:
+        logger.error(traceback.format_exc())
+        logger.error("Cannot read property 'loginEmail' or 'accessToken' from the request body. ")
         return api_response.client_error("Cannot read property 'loginEmail' or 'accessToken' from the request body. ")
 
     try:
         new_access_token = yeti_auth_service.refresh_access_token(login_email)
     except yeti_exceptions.YetiApiClientErrorException as e:
-        return api_response.client_error("Failed to refresh access token: {}".format(e))
+        logger.error(traceback.format_exc())
+        logger.error("Failed to refresh access token: {}".format(e))
+        return api_response.client_error("Failed to refresh access token, encountering client error: {}".format(e))
     except yeti_exceptions.YetiApiInternalErrorException as e:
+        logger.error(traceback.format_exc())
+        logger.error("Failed to refresh access token, encountering internal error: {}".format(e))
         return api_response.internal_error("Failed to refresh access token: {}".format(e))
     except Exception as e:
+        logger.error(traceback.format_exc())
+        logger.error("Failed to refresh access token. Encountered unexpected error: {}".format(e))
         return api_response.internal_error("Failed to refresh access token. Encountered unexpected error: {}".format(e))
 
     response = {
@@ -164,10 +179,8 @@ def refresh_outlook_access_token_helper(user_email, old_refresh_token):
     auth_verify_result = OutlookAuthorizer.refresh_token(old_refresh_token)
 
     if not auth_verify_result:
-        logger.info("An error occurred authenticating user login request. Failed to retrieve auth verification result")
         return api_response.internal_error("An error occurred authenticating user login request. Failed to retrieve auth verification result"), None
     elif auth_verify_result.code != constants.AuthVerifyResultCode.success:
-        logger.info("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
         return api_response.client_error("Failed to get new token with refresh token. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
 
     oauth_credentials = auth_verify_result.credentials
