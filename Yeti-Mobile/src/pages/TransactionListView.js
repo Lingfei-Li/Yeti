@@ -131,7 +131,7 @@ export default class TransactionListView extends React.Component {
   };
 
   _renderRow = (rowItem, rowId, sectionId) => {
-    const {FriendId, FriendName, TransactionPlatform, StatusCode, ThumbnailURI} = rowItem;
+    const {FriendId, FriendName, TransactionPlatform, StatusCode, ThumbnailURI, TransactionUnixTimestamp} = rowItem;
     return (
       <TouchableOpacity
         onPress={() => this.props.navigation.navigate('TransactionDetails', {item: rowItem})}
@@ -152,6 +152,7 @@ export default class TransactionListView extends React.Component {
             <Text style={{fontWeight: 'bold'}}>{FriendId}</Text>
             <Text>{FriendName}</Text>
             <Text>{TransactionPlatform}</Text>
+            {this.state.groupBy !== 'Date' ? <Text>{timeConverter(TransactionUnixTimestamp)}</Text> : null}
           </View>
           <View style={{marginRight: 8}}>
             <Text style={{
