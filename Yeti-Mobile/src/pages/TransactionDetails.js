@@ -13,7 +13,6 @@ import {
   StyleSheet,
 } from 'react-native';
 import {inject, observer} from "mobx-react";
-import Icon from 'react-native-vector-icons/Entypo';
 
 import Header from '../components/Header';
 import LambdaAPI from '../LambdaAPI';
@@ -26,6 +25,9 @@ import {timeConverter} from '../utils';
 export default class TransactionDetails extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      msg: ''
+    }
   }
 
   _handleStatusChange = () => {
@@ -33,22 +35,28 @@ export default class TransactionDetails extends React.Component {
     const {StatusCode, TransactionId, TransactionPlatform} = item;
     const {email, token} = this.props.store;
     if (StatusCode === 0) {
+      this.setState({msg: 'Closing Transaction, Please Wait.'});
       LambdaAPI.closeTransaction(email, token, TransactionId, TransactionPlatform)
         .then((rsp) => {
           log.log(rsp.data);
           this.props.store.closeTransaction(TransactionId, TransactionPlatform);
+          this.setState({msg: ''});
         })
         .catch((error) => {
           log.log(error.response);
+          this.setState({msg: 'some error occurred.'});
         });
     } else if (StatusCode === 1) {
+      this.setState({msg: 'Reopening Transaction, Please Wait.'});
       LambdaAPI.reopenTransaction(email, token, TransactionId, TransactionPlatform)
         .then((rsp) => {
           log.log(rsp.data);
           this.props.store.reopenTransaction(TransactionId, TransactionPlatform);
+          this.setState({msg: ''});
         })
         .catch((error) => {
           log.log(error.response);
+          this.setState({msg: 'some error occurred.'});
         });
     } else {
       log.log(`Unknown statusCode. ${StatusCode}`)
@@ -69,13 +77,14 @@ export default class TransactionDetails extends React.Component {
         {text: 'Yes', onPress: this._handleStatusChange},
         {text: 'No', onPress: () => log.log('Cancel Pressed'), style: 'cancel'},
       ],
-      { cancelable: false }
+      {cancelable: false}
     );
   };
 
   render() {
     const {item} = this.props.navigation.state.params;
-    const confirmed = item.StatusCode === 1;
+    const {FriendId, FriendName, Amount, TransactionPlatform, TransactionId, UserId, StatusCode, TransactionUnixTimestamp, Comments} = item;
+
     return (
       <View style={styles.container}>
         <Header
@@ -85,48 +94,52 @@ export default class TransactionDetails extends React.Component {
         />
         <ScrollView style={{flex: 1, width: '100%'}}>
           <View style={{flex: 1, alignItems: 'center'}}>
-            <Text style={{fontSize: 22, marginTop: 10}}>{item.FriendName}</Text>
-            <Text>id: {item.FriendId}</Text>
-            <Text style={{fontSize: 20, fontWeight: 'bold', marginTop: 12, marginBottom: 8}}>$ {item.Amount}</Text>
+            <Text style={{fontSize: 22, marginTop: 10}}>{FriendName}</Text>
+            <Text>id: {FriendId}</Text>
+            <Text style={{fontSize: 20, fontWeight: 'bold', marginTop: 12, marginBottom: 8}}>$ {Amount}</Text>
             <Text
-              style={{color: confirmed ? "red" : "green", marginBottom: 10, fontSize: 18}}
+              style={{color: StatusCode === 0 ? "green" : "red", marginBottom: 10, fontSize: 18}}
             >
-              {confirmed ? "Closed" : "Open"}
+              {StatusCode === 0 ? "Open" : "Closed"}
             </Text>
 
             <View style={{flexDirection: 'row', paddingLeft: 10, paddingRight: 10}}>
               <Text style={{color: '#888'}}>Platform: </Text>
               <View style={{flex: 1}}/>
-              <Text>{item.TransactionPlatform}</Text>
+              <Text>{TransactionPlatform}</Text>
             </View>
             <View style={{flexDirection: 'row', paddingLeft: 10, paddingRight: 10}}>
               <Text style={{color: '#888'}}>TransactionId: </Text>
               <View style={{flex: 1}}/>
-              <Text>{item.TransactionId}</Text>
+              <Text>{TransactionId}</Text>
             </View>
             <View style={{flexDirection: 'row', paddingLeft: 10, paddingRight: 10}}>
               <Text style={{color: '#888'}}>UserId: </Text>
               <View style={{flex: 1}}/>
-              <Text>{item.UserId}</Text>
+              <Text>{UserId}</Text>
             </View>
 
             <View style={{flexDirection: 'row', paddingLeft: 10, paddingRight: 10}}>
               <Text style={{color: '#888'}}>Timestamp: </Text>
               <View style={{flex: 1}}/>
-              <Text>{timeConverter(item.TransactionUnixTimestamp, true)}</Text>
+              <Text>{timeConverter(TransactionUnixTimestamp, true)}</Text>
             </View>
 
             <View style={{flexDirection: 'row', paddingLeft: 10, paddingRight: 10}}>
               <Text style={{color: '#888'}}>Comments: </Text>
               <View style={{flex: 1}}/>
-              <Text>{item.Comments}</Text>
+              <Text>{Comments}</Text>
             </View>
+
+            <Text style={{paddingTop: 5, color: 'rgb(236, 71, 139)'}}>
+              {this.state.msg}
+            </Text>
 
             <TouchableOpacity
               onPress={this._handleConfirmBtnClicked}
             >
               <View style={styles.confirmBtnContainer}>
-                <Text style={styles.confirmBtnText}>{confirmed ? "Reopen Transaction" : "Close Transaction"}</Text>
+                <Text style={styles.confirmBtnText}>{StatusCode === 0 ? "Close Transaction" : "Reopen Transaction"}</Text>
               </View>
             </TouchableOpacity>
           </View>

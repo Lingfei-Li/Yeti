@@ -24,10 +24,13 @@ class Store {
     }
   };
 
+  @action
   reopenTransaction = (TransactionId, TransactionPlatform) => {
     for (let i = 0; i < this.transactions.length; i++) {
       if (this.transactions[i]["TransactionId"] === TransactionId && this.transactions[i]["TransactionPlatform"] === TransactionPlatform) {
-        this.transactions[i]["StatusCode"] = 0;
+        runInAction(() => {
+          this.transactions[i]["StatusCode"] = 0;
+        });
       }
     }
   };

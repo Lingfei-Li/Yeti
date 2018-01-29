@@ -11,7 +11,7 @@ const timeConverter = (UNIX_timestamp, detailed) => {
   const hour = a.getHours();
   const min = a.getMinutes();
   const sec = a.getSeconds();
-  let dateStr = date + '-' + month + '-' + year;
+  let dateStr = month + '-' + date + '-' + year;
   if (detailed) {
     dateStr = dateStr + ' ' + hour + ':' + min + ':' + sec;
   }

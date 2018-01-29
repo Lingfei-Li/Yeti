@@ -6,6 +6,7 @@ import React from 'react';
 import {
   Text,
   View,
+  Image,
   TouchableOpacity,
   TextInput,
   StyleSheet,
@@ -99,20 +100,36 @@ export default class TransactionListView extends React.Component {
   };
 
   _renderRow = (rowItem, rowId, sectionId) => {
+    const {FriendId, FriendName, TransactionPlatform, StatusCode, ThumbnailURI} = rowItem;
     return (
       <TouchableOpacity
         onPress={() => this.props.navigation.navigate('TransactionDetails', {item: rowItem})}
       >
         <View style={{
-          backgroundColor: '#C1CEE6',
+          flexDirection: 'row',
           borderBottomWidth: 1,
           borderBottomColor: '#ddd',
           paddingLeft: 15,
-          padding: 5
+          padding: 5,
+          backgroundColor: '#C1CEE6',
+          alignItems: 'center'
         }}>
-          <Text style={{fontWeight: 'bold'}}>{rowItem.FriendId}</Text>
-          <Text>{rowItem.FriendName}</Text>
-          <Text>{rowItem.TransactionPlatform}</Text>
+          <View>
+            <Image source={{uri: ThumbnailURI}} style={{width: 50, height: 50}}/>
+          </View>
+          <View style={{flex: 1, paddingLeft: 5}}>
+            <Text style={{fontWeight: 'bold'}}>{FriendId}</Text>
+            <Text>{FriendName}</Text>
+            <Text>{TransactionPlatform}</Text>
+          </View>
+          <View style={{marginRight: 8}}>
+            <Text style={{
+              fontSize: 15,
+              color: StatusCode === 0 ? 'green' : 'red'
+            }}>
+              {StatusCode === 0 ? 'Open' : 'Closed'}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     )
@@ -154,6 +171,8 @@ export default class TransactionListView extends React.Component {
         />
         <ExpanableList
           dataSource={groupedTransactionsList}
+          extraData={transactions.map((item) => item.StatusCode)}
+
           headerKey="header"
           memberKey="member"
           renderRow={this._renderRow}
