@@ -51,6 +51,35 @@ groupTransactionsByDate = (transactions) => {
   return groupedTransactionsList;
 };
 
+groupTransactionsByName = (transactions) => {
+  // sort transactions by UnixTimestamp
+  transactions = transactions.sort(
+    function (a, b) {
+      return a.TransactionUnixTimestamp <= b.TransactionUnixTimestamp;
+    });
+
+  let groupedTransactions = {};
+  for (let i = 0; i < transactions.length; i++) {
+    const friendName = transactions[i].FriendName;
+    if (friendName in groupedTransactions) {
+      groupedTransactions[friendName].push(transactions[i]);
+    } else {
+      groupedTransactions[friendName] = [transactions[i]];
+    }
+  }
+  // convert to expandable-section-flatlist format
+  let groupedTransactionsList = [];
+  for (let property in groupedTransactions) {
+    if (groupedTransactions.hasOwnProperty(property)) {
+      groupedTransactionsList.push({
+        header: property,
+        member: groupedTransactions[property]
+      })
+    }
+  }
+  return groupedTransactionsList;
+};
+
 
 @inject("store")
 @observer
@@ -60,6 +89,8 @@ export default class TransactionListView extends React.Component {
     this.state = {
       refreshing: false,
       text: '',
+      groupBy: 'Date',
+      showStatus: 'All'
     };
     this.fetchTransactions();
   }
@@ -141,7 +172,7 @@ export default class TransactionListView extends React.Component {
     this.fetchTransactions();
   }
 
-  _filterTransactions = (transaction) => {
+  _filterTransactionsByQuery = (transaction) => {
     const queries = this.state.text.toLowerCase().split(" ");
     for (let i = 0; i < queries.length; i++) {
       const inFriendName = transaction.FriendName.toLowerCase().includes(queries[i]);
@@ -154,9 +185,45 @@ export default class TransactionListView extends React.Component {
     return false;
   };
 
+  _filterTransactionsByStatus = (transactions) => {
+    if (this.state.showStatus === 'Open') {
+      return transactions.StatusCode === 0;
+    } else if (this.state.showStatus === 'Closed') {
+      return transactions.StatusCode === 1;
+    } else {
+      return true;
+    }
+  };
+
+  _handleGroupByClicked = () => {
+    if (this.state.groupBy === 'Date') {
+      this.setState({groupBy: 'Name'})
+    } else if (this.state.groupBy === 'Name') {
+      this.setState({groupBy: 'Date'})
+    }
+  };
+
+  _handleFilterClicked = () => {
+    if (this.state.showStatus === 'All') {
+      this.setState({showStatus: 'Open'})
+    } else if (this.state.showStatus === 'Open') {
+      this.setState({showStatus: 'Closed'})
+    } else if (this.state.showStatus === 'Closed') {
+      this.setState({showStatus: 'All'})
+    }
+  };
+
   render() {
-    const transactions = this.props.store.transactions.filter(this._filterTransactions);
-    const groupedTransactionsList = groupTransactionsByDate(transactions);
+    const transactions = this.props.store.transactions
+      .filter(this._filterTransactionsByQuery)
+      .filter(this._filterTransactionsByStatus);
+
+    let groupedTransactionsList = [];
+    if (this.state.groupBy === 'Name') {
+      groupedTransactionsList = groupTransactionsByName(transactions);
+    } else {
+      groupedTransactionsList = groupTransactionsByDate(transactions);
+    }
 
     return (
       <View style={styles.container}>
@@ -164,11 +231,43 @@ export default class TransactionListView extends React.Component {
           title='Transactions'
           rightItem={<Icon name={'gear'} size={26}/>}
         />
+
         <TextInput
           style={styles.searchBar}
           placeholder="Type here to Search!"
           onChangeText={(text) => this.setState({text})}
         />
+
+        <View style={{
+          flexDirection: 'row',
+          height: 30,
+          backgroundColor: '#E4E4E4',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <TouchableOpacity
+            onPress={this._handleGroupByClicked}
+            style={{flex: 1, alignItems: 'center'}}
+          >
+            <View>
+              <Text>
+                {'Group By: ' + this.state.groupBy}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={this._handleFilterClicked}
+            style={{flex: 1, alignItems: 'center'}}
+          >
+            <View>
+              <Text>
+                {'Transaction Status: ' + this.state.showStatus}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <ExpanableList
           dataSource={groupedTransactionsList}
           extraData={transactions.map((item) => item.StatusCode)}

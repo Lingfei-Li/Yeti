@@ -139,7 +139,11 @@ export default class TransactionDetails extends React.Component {
               onPress={this._handleConfirmBtnClicked}
             >
               <View style={styles.confirmBtnContainer}>
-                <Text style={styles.confirmBtnText}>{StatusCode === 0 ? "Close Transaction" : "Reopen Transaction"}</Text>
+                <Text
+                  style={styles.confirmBtnText}
+                >
+                  {StatusCode === 0 ? "Close Transaction" : "Reopen Transaction"}
+                </Text>
               </View>
             </TouchableOpacity>
           </View>
