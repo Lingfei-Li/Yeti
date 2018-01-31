@@ -51,6 +51,23 @@ Resources:
             Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
           OutlookOAuthClientSecretCipherText:
             Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
+  YetiApiGetTransactionDetails:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YetiApi-GetTransactionDetails
+      Handler: yeti_transactions_api.get_transaction_details
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        GetTransactionDetails:
+          Type: Api
+          Properties:
+            Path: /transactions/details/{transactionPlatform}/{transactionId}
+            Method: get
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
   YetiApiCloseTransaction:
     Type: AWS::Serverless::Function
     Properties:

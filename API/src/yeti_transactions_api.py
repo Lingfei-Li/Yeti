@@ -68,6 +68,35 @@ def load_transactions(event, context):
         return api_response.internal_error("Error transforming emails. Encountered unexpected error: {}".format(e))
 
 
+def get_transaction_details(event, context):
+    error_response, login_email = LoginAuthorizer.auth_non_login_event(event)
+    if error_response is not None:
+        return error_response
+
+    try:
+        transaction_platform = event['pathParameters']['transactionPlatform']
+        transaction_id = event['pathParameters']['transactionId']
+    except Exception as e:
+        return api_response.client_error("transactionPlatform or transactionId is not present in the request. Please check your input. Error: {}".format(e))
+
+    try:
+        response = transactions_table.get_item(
+            Key={
+                'TransactionId': transaction_id,
+                'TransactionPlatform': transaction_platform
+            }
+        )
+    except ClientError as e:
+        logger.error(e.response['Error']['Message'])
+        return api_response.internal_error(e.response['Error']['Message'])
+    if 'Item' not in response or not response['Item']:
+        return api_response.not_found("TransactionId {} at TransactionPlatform {} doesn't exist".format(transaction_id, transaction_platform))
+
+    result_data = replace_decimals(response['Item'])
+
+    return api_response.ok(result_data)
+
+
 def close_transaction(event, context):
     error_response, login_email = LoginAuthorizer.auth_non_login_event(event)
     if error_response is not None:
