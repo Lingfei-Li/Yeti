@@ -27,8 +27,20 @@ export default class TransactionDetails extends React.Component {
     super(props);
     this.state = {
       msg: ''
-    }
+    };
+    this._updateTransactionDetails();
   }
+
+  _updateTransactionDetails = () => {
+    const {item} = this.props.navigation.state.params;
+    const {TransactionPlatform, TransactionId} = item;
+    const {email, token} = this.props.store;
+    LambdaAPI.getTransactionDetail(email, token, TransactionPlatform, TransactionId)
+      .then((rsp) => {
+        const transaction = JSON.parse(rsp.data);
+        this.props.store.updateTransaction(TransactionId, TransactionPlatform, transaction);
+      })
+  };
 
   _handleStatusChange = () => {
     const {item} = this.props.navigation.state.params;

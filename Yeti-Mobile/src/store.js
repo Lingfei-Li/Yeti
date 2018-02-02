@@ -16,10 +16,13 @@ class Store {
   @persist @observable token = '';
   @persist('list') @observable transactions = [];
 
+  @action
   closeTransaction = (TransactionId, TransactionPlatform) => {
     for (let i = 0; i < this.transactions.length; i++) {
       if (this.transactions[i]["TransactionId"] === TransactionId && this.transactions[i]["TransactionPlatform"] === TransactionPlatform) {
-        this.transactions[i]["StatusCode"] = 1;
+        runInAction(() => {
+          this.transactions[i]["StatusCode"] = 1;
+        });
       }
     }
   };
@@ -30,6 +33,17 @@ class Store {
       if (this.transactions[i]["TransactionId"] === TransactionId && this.transactions[i]["TransactionPlatform"] === TransactionPlatform) {
         runInAction(() => {
           this.transactions[i]["StatusCode"] = 0;
+        });
+      }
+    }
+  };
+
+  @action
+  updateTransaction = (TransactionId, TransactionPlatform, transaction) => {
+    for (let i = 0; i < this.transactions.length; i++) {
+      if (this.transactions[i]["TransactionId"] === TransactionId && this.transactions[i]["TransactionPlatform"] === TransactionPlatform) {
+        runInAction(() => {
+          this.transactions[i] = transaction;
         });
       }
     }

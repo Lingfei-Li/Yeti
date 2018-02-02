@@ -6,7 +6,7 @@ import React from 'react';
 import axios from 'axios';
 
 
-const connectionTimeOut = 5000;
+const connectionTimeOut = 20000;
 
 export default class LambdaAPI {
   static uploadOutlookCode(authCode) {
@@ -30,6 +30,20 @@ export default class LambdaAPI {
       axios({
         method: 'GET',
         url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/transactions',
+        headers: {
+          "Authorization": "Bearer " + token,
+          "login-email": email,
+        },
+        timeout: connectionTimeOut,
+      })
+    )
+  }
+
+  static getTransactionDetail(email, token, transactionPlatform, transactionId) {
+    return (
+      axios({
+        method: 'GET',
+        url: `https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/transactions/details/${transactionPlatform}/${transactionId}`,
         headers: {
           "Authorization": "Bearer " + token,
           "login-email": email,
