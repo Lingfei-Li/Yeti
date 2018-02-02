@@ -6,7 +6,6 @@ import React from 'react';
 import {
   Text,
   View,
-  FlatList,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -28,22 +27,29 @@ export default class TransactionDetails extends React.Component {
     this.state = {
       msg: ''
     };
+    const {item} = this.props.navigation.state.params;
+    const {TransactionId, TransactionPlatform} = item;
+    this.TransactionId = TransactionId;
+    this.TransactionPlatform = TransactionPlatform;
+
     this._updateTransactionDetails();
   }
 
   _updateTransactionDetails = () => {
-    const {item} = this.props.navigation.state.params;
+    log.log("Updating transaction details.");
+    const item = this.props.store.getTransaction(this.TransactionId, this.TransactionPlatform);
     const {TransactionPlatform, TransactionId} = item;
     const {email, token} = this.props.store;
     LambdaAPI.getTransactionDetail(email, token, TransactionPlatform, TransactionId)
       .then((rsp) => {
         const transaction = JSON.parse(rsp.data);
+        log.log(transaction);
         this.props.store.updateTransaction(TransactionId, TransactionPlatform, transaction);
       })
   };
 
   _handleStatusChange = () => {
-    const {item} = this.props.navigation.state.params;
+    const item = this.props.store.getTransaction(this.TransactionId, this.TransactionPlatform);
     const {StatusCode, TransactionId, TransactionPlatform} = item;
     const {email, token} = this.props.store;
     if (StatusCode === 0) {
@@ -76,7 +82,7 @@ export default class TransactionDetails extends React.Component {
   };
 
   _handleConfirmBtnClicked = () => {
-    const {item} = this.props.navigation.state.params;
+    const item = this.props.store.getTransaction(this.TransactionId, this.TransactionPlatform);
     const {StatusCode} = item;
 
     const title = StatusCode === 0 ? 'Close Transaction' : "Reopen Transaction";
@@ -94,7 +100,7 @@ export default class TransactionDetails extends React.Component {
   };
 
   render() {
-    const {item} = this.props.navigation.state.params;
+    const item = this.props.store.getTransaction(this.TransactionId, this.TransactionPlatform);
     const {FriendId, FriendName, Amount, TransactionPlatform, TransactionId, UserId, StatusCode, TransactionUnixTimestamp, Comments} = item;
 
     return (

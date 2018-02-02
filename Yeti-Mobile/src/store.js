@@ -16,6 +16,14 @@ class Store {
   @persist @observable token = '';
   @persist('list') @observable transactions = [];
 
+  getTransaction = (TransactionId, TransactionPlatform) => {
+    for (let i = 0; i < this.transactions.length; i++) {
+      if (this.transactions[i]["TransactionId"] === TransactionId && this.transactions[i]["TransactionPlatform"] === TransactionPlatform) {
+        return this.transactions[i];
+      }
+    }
+  };
+
   @action
   closeTransaction = (TransactionId, TransactionPlatform) => {
     for (let i = 0; i < this.transactions.length; i++) {

@@ -31,7 +31,6 @@ groupTransactionsByDate = (transactions) => {
   let groupedTransactions = {};
   for (let i = 0; i < transactions.length; i++) {
     const dateString = timeConverter(transactions[i].TransactionUnixTimestamp);
-    transactions[i].dateString = dateString;
     if (dateString in groupedTransactions) {
       groupedTransactions[dateString].push(transactions[i]);
     } else {
