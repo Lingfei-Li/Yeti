@@ -13,12 +13,12 @@ export default class LambdaAPI {
     return(
       axios({
         method: 'POST',
-        url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/user/login/outlook_oauth',
+        url: 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/auth/outlook-oauth',
         headers: {
           "content-type": "application/json",
         },
         data: {
-          authCode: authCode
+          auth_code: authCode
         },
         timeout: connectionTimeOut,
       })
