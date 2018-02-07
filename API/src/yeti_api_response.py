@@ -11,7 +11,7 @@ def ok(data, headers=None):
     return response(200, json.dumps(data), headers)
 
 
-def ok_no_data(message, headers=None):
+def ok_no_data(message="success", headers=None):
     return response(200, {
         "message": message
     }, headers)

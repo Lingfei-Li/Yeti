@@ -2,13 +2,6 @@ swagger: "2.0"
 info:
   version: "1.0.0"
   title: "Project Yeti"
-tags:
-  - name: "user"
-    description: "Auth operations on users/logins/token"
-  - name: "transaction"
-    description: "Operations on transactions"
-  - name: "email"
-    description: "Operations on emails"
 
 basePath: "/prod"
 schemes:
@@ -16,21 +9,9 @@ schemes:
 paths:
   /user/login/outlook_oauth:
     post:
-      tags:
-        - "user"
-      summary: Validate the provided email-password combination and return a JWT token
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "The credentials for the user to log in"
-        required: true
-        schema:
-          $ref: "#/definitions/OutlookOAuthRequestBody"
       responses:
         200:
           description: "Successful login. JWT token returned."
-          schema:
-            $ref: '#/definitions/LoginResponse'
         400:
           description: "Client-side error (Combination incorrect / Request body not properly set)"
         500:
@@ -76,164 +57,9 @@ paths:
               type: "string"
             Access-Control-Allow-Origin:
               type: "string"
-  /user/login/gmail_oauth:
+
+  /payment/outlook-notification:
     post:
-      tags:
-        - "user"
-      summary: Validate the provided email-password combination and return a JWT token
-      responses:
-        200:
-          description: "Successful login. JWT token returned."
-        400:
-          description: "Client-side error (Combination incorrect / Request body not properly set)"
-        500:
-          description: "Server-side error"
-      x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-GmailOAuth/invocations
-        httpMethod: POST
-        type: aws_proxy
-    options:
-      summary: CORS support
-      description: |
-        Enable CORS by returning correct headers
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      tags:
-        - CORS
-      x-amazon-apigateway-integration:
-        type: mock
-        requestTemplates:
-          application/json: |
-            {
-              "statusCode" : 200
-            }
-        responses:
-          "default":
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods : "'*'"
-              method.response.header.Access-Control-Allow-Origin : "'*'"
-            responseTemplates:
-              application/json: |
-                {}
-      responses:
-        200:
-          description: Default response for CORS method
-          headers:
-            Access-Control-Allow-Headers:
-              type: "string"
-            Access-Control-Allow-Methods:
-              type: "string"
-            Access-Control-Allow-Origin:
-              type: "string"
-  /user/token/refresh_access_token:
-    post:
-      tags:
-        - "user"
-      summary: Get a new access token with the provided refresh token
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "The refresh token and the access token"
-        required: true
-        schema:
-          $ref: "#/definitions/RefreshAccessTokenRequestBody"
-      responses:
-        200:
-          description: "Successfully retrieved a new access token"
-          schema:
-            $ref: '#/definitions/RefreshAccessTokenResponse'
-        400:
-          description: "Client-side error"
-        500:
-          description: "Server-side error"
-      x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-RefreshAccessToken/invocations
-        httpMethod: POST
-        type: aws_proxy
-  /transactions:
-    get:
-      tags:
-        - "transaction"
-      parameters:
-        - name: "login-email"
-          in: "header"
-          description: "The login email associated with the access token"
-          required: true
-          type: "string"
-        - name: "Authorization"
-          in: "header"
-          description: "A JWT token that authenticates and authorizes the user. "
-          required: true
-          type: "string"
-      responses:
-        200:
-          description: "Successful request"
-          schema:
-            $ref: '#/definitions/Transactions'
-        400:
-          description: "Client-side error (Authorization token not set / invalid)"
-        500:
-          description: "Server-side error"
-      x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-LoadTransactions/invocations
-        httpMethod: POST
-        type: aws_proxy
-    options:
-      summary: CORS support
-      description: |
-        Enable CORS by returning correct headers
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      tags:
-        - CORS
-      x-amazon-apigateway-integration:
-        type: mock
-        requestTemplates:
-          application/json: |
-            {
-              "statusCode" : 200
-            }
-        responses:
-          "default":
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods : "'*'"
-              method.response.header.Access-Control-Allow-Origin : "'*'"
-            responseTemplates:
-              application/json: |
-                {}
-      responses:
-        200:
-          description: Default response for CORS method
-          headers:
-            Access-Control-Allow-Headers:
-              type: "string"
-            Access-Control-Allow-Methods:
-              type: "string"
-            Access-Control-Allow-Origin:
-              type: "string"
-  /transactions/details/{transactionPlatform}/{transactionId}:
-    get:
-      tags:
-        - "transaction"
-      parameters:
-        - name: "login-email"
-          in: "header"
-          description: "The login email associated with the access token"
-          required: true
-          type: "string"
-        - name: "Authorization"
-          in: "header"
-          description: "A JWT token that authenticates and authorizes the user. "
-          required: true
-          type: "string"
       responses:
         200:
           description: "Successful request"
@@ -242,143 +68,7 @@ paths:
         500:
           description: "Server-side error"
       x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-GetTransactionDetails/invocations
-        httpMethod: POST
-        type: aws_proxy
-    options:
-      summary: CORS support
-      description: |
-        Enable CORS by returning correct headers
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      tags:
-        - CORS
-      x-amazon-apigateway-integration:
-        type: mock
-        requestTemplates:
-          application/json: |
-            {
-              "statusCode" : 200
-            }
-        responses:
-          "default":
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods : "'*'"
-              method.response.header.Access-Control-Allow-Origin : "'*'"
-            responseTemplates:
-              application/json: |
-                {}
-      responses:
-        200:
-          description: Default response for CORS method
-          headers:
-            Access-Control-Allow-Headers:
-              type: "string"
-            Access-Control-Allow-Methods:
-              type: "string"
-            Access-Control-Allow-Origin:
-              type: "string"
-  /transactions/close:
-    post:
-      tags:
-        - "transaction"
-      parameters:
-        - name: "login-email"
-          in: "header"
-          description: "The login email associated with the access token"
-          required: true
-          type: "string"
-        - name: "Authorization"
-          in: "header"
-          description: "A JWT token that authenticates and authorizes the user. "
-          required: true
-          type: "string"
-        - in: "body"
-          name: "body"
-          required: true
-          schema:
-            $ref: "#/definitions/CloseReopenTransactionRequest"
-      responses:
-        200:
-          description: "Successful request"
-        400:
-          description: "Client-side error (Authorization token not set / invalid)"
-        500:
-          description: "Server-side error"
-      x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-CloseTransaction/invocations
-        httpMethod: POST
-        type: aws_proxy
-    options:
-      summary: CORS support
-      description: |
-        Enable CORS by returning correct headers
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      tags:
-        - CORS
-      x-amazon-apigateway-integration:
-        type: mock
-        requestTemplates:
-          application/json: |
-            {
-              "statusCode" : 200
-            }
-        responses:
-          "default":
-            statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-              method.response.header.Access-Control-Allow-Methods : "'*'"
-              method.response.header.Access-Control-Allow-Origin : "'*'"
-            responseTemplates:
-              application/json: |
-                {}
-      responses:
-        200:
-          description: Default response for CORS method
-          headers:
-            Access-Control-Allow-Headers:
-              type: "string"
-            Access-Control-Allow-Methods:
-              type: "string"
-            Access-Control-Allow-Origin:
-              type: "string"
-  /transactions/reopen:
-    post:
-      tags:
-        - "transaction"
-      parameters:
-        - name: "login-email"
-          in: "header"
-          description: "The login email associated with the access token"
-          required: true
-          type: "string"
-        - name: "Authorization"
-          in: "header"
-          description: "A JWT token that authenticates and authorizes the user. "
-          required: true
-          type: "string"
-        - in: "body"
-          name: "body"
-          required: true
-          schema:
-            $ref: "#/definitions/CloseReopenTransactionRequest"
-      responses:
-        200:
-          description: "Successful request"
-        400:
-          description: "Client-side error (Authorization token not set / invalid)"
-        500:
-          description: "Server-side error"
-      x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:YetiApi-ReopenTransaction/invocations
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:Yeti-PaymentService-OutlookNotificationHandler/invocations
         httpMethod: POST
         type: aws_proxy
     options:
@@ -419,68 +109,155 @@ paths:
             Access-Control-Allow-Origin:
               type: "string"
 
-definitions:
-  OutlookOAuthRequestBody:
-    type: "object"
-    properties:
-      authCode:
-        type: "string"
-  RefreshAccessTokenRequestBody:
-    type: "object"
-    properties:
-      loginEmail:
-        type: "string"
-      accessToken:
-        type: "string"
-  RefreshAccessTokenResponse:
-    type: "object"
-    properties:
-      message:
-        type: "string"
-      accessToken:
-        type: "string"
-  CloseReopenTransactionRequest:
-    type: "object"
-    properties:
-      transactionId:
-        type: "string"
-      transactionPlatform:
-        type: "string"
-  Transactions:
-    type: "object"
-    properties:
-      count:
-        type: "integer"
-      data:
-        type: "array"
-        items:
-          $ref: "#/definitions/Transaction"
-  Transaction:
-    type: "object"
-    properties:
-      TransactionId:
-        type: "string"
-      TransactionPlatform:
-        type: "string"
-      Amount:
-        type: "integer"
-        format: "int64"
-      StatusCode:
-        type: "integer"
-        format: "int64"
-      Comments:
-        type: "integer"
-        format: "int64"
-      TransactionUnixTimestamp:
-        type: "integer"
-        format: "int64"
-      FriendId:
-        type: "string"
-      FriendName:
-        type: "string"
-      UserEmail:
-        type: "string"
-      UserId:
-        type: "string"
-      SerializedUpdateHistory:
-        type: "string"
+  /order/create:
+    post:
+      responses:
+        200:
+          description: "Successful request"
+        400:
+          description: "Client-side error (Authorization token not set / invalid)"
+        500:
+          description: "Server-side error"
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:Yeti-OrderService-CreateOrder/invocations
+        httpMethod: POST
+        type: aws_proxy
+    options:
+      summary: CORS support
+      description: |
+        Enable CORS by returning correct headers
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - CORS
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          "default":
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods : "'*'"
+              method.response.header.Access-Control-Allow-Origin : "'*'"
+            responseTemplates:
+              application/json: |
+                {}
+      responses:
+        200:
+          description: Default response for CORS method
+          headers:
+            Access-Control-Allow-Headers:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+
+  /ticket/create:
+    post:
+      responses:
+        200:
+          description: "Successful request"
+        400:
+          description: "Client-side error (Authorization token not set / invalid)"
+        500:
+          description: "Server-side error"
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:Yeti-TicketService-CreateTicket/invocations
+        httpMethod: POST
+        type: aws_proxy
+    options:
+      summary: CORS support
+      description: |
+        Enable CORS by returning correct headers
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - CORS
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          "default":
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods : "'*'"
+              method.response.header.Access-Control-Allow-Origin : "'*'"
+            responseTemplates:
+              application/json: |
+                {}
+      responses:
+        200:
+          description: Default response for CORS method
+          headers:
+            Access-Control-Allow-Headers:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+
+  /auth/outlook-oauth:
+    post:
+      responses:
+        200:
+          description: "Successful request"
+        400:
+          description: "Client-side error (Authorization token not set / invalid)"
+        500:
+          description: "Server-side error"
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:917309224575:function:Yeti-AuthService-OutlookOAuth/invocations
+        httpMethod: POST
+        type: aws_proxy
+    options:
+      summary: CORS support
+      description: |
+        Enable CORS by returning correct headers
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - CORS
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          "default":
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods : "'*'"
+              method.response.header.Access-Control-Allow-Origin : "'*'"
+            responseTemplates:
+              application/json: |
+                {}
+      responses:
+        200:
+          description: Default response for CORS method
+          headers:
+            Access-Control-Allow-Headers:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"

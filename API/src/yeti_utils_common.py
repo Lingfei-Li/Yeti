@@ -1,7 +1,15 @@
 import decimal
-import boto3
-import os
-from base64 import b64decode
+import json
+
+import html2text
+import re
+import logging
+from bs4 import BeautifulSoup
+
+import yeti_exceptions
+
+logger = logging.getLogger("YetiCommonUtils")
+logger.setLevel(logging.INFO)
 
 
 def replace_decimals(obj):
@@ -20,18 +28,4 @@ def replace_decimals(obj):
             return float(obj)
     else:
         return obj
-
-
-decrypted_data = {}
-
-
-def decrypt_for_key(key):
-    if key in decrypted_data:
-        return decrypted_data[key]
-    if key not in os.environ:
-        return None
-    encrypted_val = os.environ[key]
-    decrypted_val = boto3.client('kms').decrypt(CiphertextBlob=b64decode(encrypted_val))['Plaintext']
-    decrypted_data[key] = decrypted_val
-    return decrypted_val
 

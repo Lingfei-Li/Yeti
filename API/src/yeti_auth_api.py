@@ -8,11 +8,11 @@ from uuid import uuid4
 import traceback
 
 import yeti_api_response as api_response
-from yeti_dynamodb import logins_table, tokens_table
+from aws_client_dynamodb import logins_table, tokens_table
 from yeti_auth_authorizers import LoginAuthorizer, OutlookAuthorizer, GmailAuthorizer
 import yeti_constants as constants
 import outlook_service
-import yeti_auth_service
+import yeti_service_auth
 import yeti_exceptions
 
 logger = logging.getLogger("YetiAuthApi")
@@ -53,12 +53,11 @@ def login_outlook_oauth(event, context):
         logger.info("AccessToken already expired when retrieved from authCode")
         return api_response.internal_error("AccessToken already expired when retrieved from authCode")
 
+    # user_email = 'yeti-dev@outlook.com'
     user = outlook_service.get_me(access_token)
     user_email = None
-    if 'mail' in user and user['mail'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['mail']):
-        user_email = user['mail']
-    if 'userPrincipalName' in user and user['userPrincipalName'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['userPrincipalName']):
-        user_email = user['userPrincipalName']
+    if 'EmailAddress' in user and user['EmailAddress'] and re.match(r"[^@]+@[^@]+\.[^@]+", user['EmailAddress']):
+        user_email = user['EmailAddress']
     if not user_email:
         logger.error(traceback.format_exc())
         logger.error("Cannot determine user email. Auth result: {}".format(auth_verify_result))
@@ -143,7 +142,7 @@ def refresh_access_token(event, context):
         return api_response.client_error("Cannot read property 'loginEmail' or 'accessToken' from the request body. ")
 
     try:
-        new_access_token = yeti_auth_service.refresh_access_token(login_email)
+        new_access_token = yeti_service_auth.refresh_access_token(login_email)
     except yeti_exceptions.YetiApiClientErrorException as e:
         logger.error(traceback.format_exc())
         logger.error("Failed to refresh access token: {}".format(e))

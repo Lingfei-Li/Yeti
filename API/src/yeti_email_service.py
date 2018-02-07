@@ -4,8 +4,9 @@ from decimal import Decimal
 import datetime
 import time
 
+import yeti_constants
 import yeti_exceptions
-from yeti_dynamodb import transactions_table, tokens_table
+from aws_client_dynamodb import transactions_table, tokens_table
 import outlook_service
 import yeti_email_parser
 
@@ -141,12 +142,12 @@ def transform_email_to_transaction(user_email_address, email):
             "ThumbnailURI": thumbnail_uri,
             "FriendId": friend_id,
             "FriendName": friend_name,
-            "SerializedUpdateHistory": [],
-            "StatusCode": 0,  # 0 for not confirmed, 1 for confirmed
+            "UpdateHistory": [],
+            "StatusCode": yeti_constants.TransactionStatusCode.open,
             "TransactionUnixTimestamp": email_unix_timestamp_decimal,
             "UserEmail": user_email_address,
             "UserId": user_id,
-            "Direction": direction  # 0 if you pay someone, 1 if someone pays you.
+            "Direction": yeti_constants.TransactionDirectionCode.i_pay_friend
         }
         logger.info("Putting transaction item to table: \n{}".format(transaction_item))
         transactions_table.put_item(Item=transaction_item)

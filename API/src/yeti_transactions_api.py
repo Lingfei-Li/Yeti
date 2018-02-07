@@ -5,12 +5,12 @@ from botocore.exceptions import ClientError
 import traceback
 
 import yeti_api_response as api_response
-from yeti_dynamodb import transactions_table
+from aws_client_dynamodb import transactions_table
 from yeti_common_utils import replace_decimals
 from yeti_auth_authorizers import LoginAuthorizer
 import yeti_constants as constants
 import yeti_email_service
-import yeti_auth_service
+import yeti_service_auth
 import yeti_exceptions
 
 
@@ -28,12 +28,12 @@ def load_transactions(event, context):
     try:
         try:
             logger.info("Retrieve and examine access token for email")
-            access_token = yeti_auth_service.get_access_token_for_email(login_email)
+            access_token = yeti_service_auth.get_access_token_for_email(login_email)
             logger.info("Load and transform emails")
             yeti_email_service.transform_emails_util(access_token, login_email)
         except yeti_exceptions.YetiAuthTokenExpiredException:
             logger.info("Access token expired. Trying to refresh")
-            access_token = yeti_auth_service.refresh_access_token(login_email)
+            access_token = yeti_service_auth.refresh_access_token(login_email)
             logger.info("Token refreshed. Load and transform emails")
             yeti_email_service.transform_emails_util(access_token, login_email)
 
@@ -138,7 +138,7 @@ def close_transaction(event, context):
         },
         UpdateExpression="set StatusCode = :s",
         ExpressionAttributeValues={
-            ':s': constants.TransactionStatusCode.completed
+            ':s': constants.TransactionStatusCode.closed
         }
     )
 
@@ -193,4 +193,24 @@ def reopen_transaction(event, context):
 
     logger.info("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
     return api_response.ok_no_data("Transaction [ id: {}, platform: {} ] re-opened successfully".format(transaction_id, transaction_platform))
+
+
+def handle_outlook_subscription(event, context):
+    logger.info("Subscription request: {}".format(event))
+    validation_token = ""
+    try:
+        validation_token = event['queryStringParameters']['validationtoken']
+    except Exception as e:
+        logger.info("Can't read validation token from outlook subscription request. error: {}, request event: {}".format(e, event))
+
+    return {
+        'statusCode': 200,
+        'headers': {
+            "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+            "Access-Control-Allow-Methods": "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT",
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "text/plain"
+        },
+        'body': validation_token
+    }
 

@@ -1,51 +1,16 @@
-from botocore.exceptions import ClientError
-import logging
 import jwt
 import requests
-import httplib2
-from datetime import datetime
-from apiclient import errors
 
-from oauth2client.client import flow_from_clientsecrets
-from apiclient import discovery
+import html2text
+import re
+import logging
 
-from yeti_dynamodb import logins_table
-import yeti_constants as constants
-import yeti_common_utils
-import yeti_api_response
+import yeti_models
+from secret_config import outlook_credentials
+from yeti_models import AuthVerifyResult, AuthVerifyResultCode, OAuthCredentials
 
-logger = logging.getLogger("YetiAuthAuthorizers")
+logger = logging.getLogger("YetiAuthorizers")
 logger.setLevel(logging.INFO)
-
-
-class OAuthCredentials:
-    access_token = None
-    refresh_token = None
-    expiration_unix_timestamp = None
-    raw_credentials_obj = None
-
-    def __init__(self, access_token, refresh_token=None, expires_in=None, expiration_datetime=None, raw_credentials_obj=None):
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        if not expiration_datetime:
-            self.expiration_unix_timestamp = datetime.now().timestamp() + expires_in - 300  # current time + expiration - 5 minutes
-        elif not expires_in:
-            self.expiration_unix_timestamp = expiration_datetime.timestamp()
-        else:
-            raise Exception("One of expires_in and expiration_datetime must be provided")
-        self.raw_credentials_obj = raw_credentials_obj
-
-
-class AuthVerifyResult:
-    code = None
-    message = None
-    credentials = None  # class:OAuthCredentials
-
-    def __init__(self, code, message="", token=None, credentials=None):
-        self.code = code
-        self.message = message
-        self.token = token
-        self.credentials = credentials
 
 
 class OutlookAuthorizer:
@@ -66,29 +31,29 @@ class OutlookAuthorizer:
     # The scopes required by the app
     scopes = ['openid',
               'offline_access',
-              'User.Read',
-              'Mail.Read'
+              'https://outlook.office.com/user.read',
+              'https://outlook.office.com/mail.read'
               ]
 
     # Client ID and secret
     @staticmethod
     def get_client_secrets_from_env():
         try:
-            client_id = yeti_common_utils.decrypt_for_key('OutlookOAuthClientIdCipherText').decode('utf-8')
-            client_secret = yeti_common_utils.decrypt_for_key('OutlookOAuthClientSecretCipherText').decode('utf-8')
+            client_id = outlook_credentials['OutlookOAuthClientId']
+            client_secret = outlook_credentials['OutlookOAuthClientSecret']
         except Exception as e:
-            logger.error("Failed to decode Outlook OAuth credentials. Exception: {}".format(e))
+            logger.error("Failed to get Outlook OAuth credentials. Exception: {}".format(e))
             return None, None
         return client_id, client_secret
 
     @staticmethod
-    def get_credentials(auth_code):
+    def exchange_code_for_credentials(auth_code):
         client_id, client_secret = OutlookAuthorizer.get_client_secrets_from_env()
         logger.info("client id {}, client secret {}".format(client_id, client_secret))
         if not client_id or not client_secret:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
-                                    message='Outlook OAuth client credentials are not properly set. Please check your Lambda function environment variable or CloudFormation '
-                                            'stack parameter')
+            return AuthVerifyResult(code=AuthVerifyResultCode.server_error,
+                                    message='Outlook OAuth client credentials are not properly set. Please check your Lambda function environment variable or '
+                                            'CloudFormation stack parameter')
 
         # Build the post form for the token request
         post_data = {'grant_type': 'authorization_code',
@@ -101,20 +66,22 @@ class OutlookAuthorizer:
 
         r = requests.post(OutlookAuthorizer.token_url, data=post_data)
 
+        logger.info("Response for access token: {}".format(r))
+
         try:
             result_data = r.json()
         except Exception as e:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+            return AuthVerifyResult(code=AuthVerifyResultCode.auth_code_invalid,
                                     message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code,
                                                                                                        r.text, e))
         if 'error' in result_data and result_data['error']:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+            return AuthVerifyResult(code=AuthVerifyResultCode.auth_code_invalid,
                                     message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: {}".format(result_data['error_description']))
 
         credentials = OAuthCredentials(access_token=result_data['access_token'],
                                        refresh_token=result_data['refresh_token'],
-                                       expires_in=result_data['expires_in'])
-        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
+                                       expires_in_seconds=result_data['expires_in'])
+        return AuthVerifyResult(code=AuthVerifyResultCode.success,
                                 message="Token retrieved successfully",
                                 credentials=credentials)
 
@@ -123,7 +90,7 @@ class OutlookAuthorizer:
         client_id, client_secret = OutlookAuthorizer.get_client_secrets_from_env()
         logger.info("client id {}, client secret {}".format(client_id, client_secret))
         if not client_id or not client_secret:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
+            return AuthVerifyResult(code=yeti_models.AuthVerifyResultCode.server_error,
                                     message='Outlook OAuth client ID or client secret is not properly set')
 
         # Build the post form for the token request
@@ -140,87 +107,27 @@ class OutlookAuthorizer:
         try:
             result_data = r.json()
         except Exception as e:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+            return AuthVerifyResult(code=yeti_models.AuthVerifyResultCode.auth_code_invalid,
                                     message='Error retrieving token: {0} - {1}. Exception: {2}'.format(r.status_code, r.text, e))
         if 'error' in result_data and result_data['error']:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
+            return AuthVerifyResult(code=yeti_models.AuthVerifyResultCode.auth_code_invalid,
                                     message="Unable to retrieve token with the given auth code. Error from Outlook OAuth: {}".format(result_data['error_description']))
 
         credentials = OAuthCredentials(access_token=result_data['access_token'],
                                        refresh_token=result_data['refresh_token'],
-                                       expires_in=result_data['expires_in'])
-        return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
+                                       expires_in_seconds=result_data['expires_in'])
+        return AuthVerifyResult(code=yeti_models.AuthVerifyResultCode.success,
                                 message="Token retrieved successfully",
                                 credentials=credentials)
 
 
-class GmailAuthorizer:
-    CLIENT_SECRETS_LOCATION = './gmail_client_secret.json'
-    REDIRECT_URI = 'http://oauth2.example.com/callback'
-    SCOPES = [
-        'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        # Add other requested scopes.
-    ]
-
-    @staticmethod
-    def get_user_email(credentials):
-        try:
-            user_info_service = discovery.build(
-                serviceName='oauth2',
-                version='v2',
-                http=credentials.authorize(httplib2.Http()))
-            user_info = user_info_service.userinfo().get().execute()
-            user_email = user_info.get('email')
-            return user_email
-        except Exception as e:
-            logging.error('Failed to get user email. Exception: {}'.format(e))
-            return None
-
-    @staticmethod
-    def get_credentials(auth_code):
-        try:
-            # Exchange code for token
-            flow = flow_from_clientsecrets(GmailAuthorizer.CLIENT_SECRETS_LOCATION, ' '.join(GmailAuthorizer.SCOPES))
-            flow.redirect_uri = GmailAuthorizer.REDIRECT_URI
-            google_api_credentials = flow.step2_exchange(auth_code)
-            if google_api_credentials.refresh_token is None:
-                logging.info("The returned credentials don't contain a refresh token")
-
-            logger.info(google_api_credentials.access_token)
-            logger.info(google_api_credentials.token_expiry)
-
-            # Transform the Google API credentials object to Yeti standard credentials
-            credentials = OAuthCredentials(access_token=google_api_credentials.access_token,
-                                           refresh_token=google_api_credentials.refresh_token,
-                                           expiration_datetime=google_api_credentials.token_expiry,
-                                           raw_credentials_obj=google_api_credentials)
-
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
-                                    message="Token retrieved successfully",
-                                    credentials=credentials)
-        except Exception as e:
-            logging.error('An error occurred during code exchange.')
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.auth_code_invalid,
-                                    message='Error retrieving token. Exception: {}'.format(e))
-
-    @staticmethod
-    def refresh_token(google_api_credentials):
-        try:
-            google_api_credentials.refresh(httplib2.Http())
-            credentials = OAuthCredentials(access_token=google_api_credentials.access_token,
-                                           expiration_datetime=google_api_credentials.token_expiry,
-                                           raw_credentials_obj=google_api_credentials)
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.success,
-                                    message="Token retrieved successfully",
-                                    credentials=credentials)
-        except Exception as e:
-            return AuthVerifyResult(code=constants.AuthVerifyResultCode.server_error,
-                                    message='Error refreshing token. Exception: {}'.format(e))
-
-
 class LoginAuthorizer:
+    @staticmethod
+    def generate_jwt_token(login_email, secret):
+        token = jwt.encode({'login_email': login_email}, secret)
+        token_utf8 = token.decode('utf-8')
+        return token_utf8
+
     @staticmethod
     def auth_non_login_event(event):
         try:
@@ -249,12 +156,6 @@ class LoginAuthorizer:
             return yeti_api_response.client_error("Permission Denied. Code: {}, Message: {}".format(auth_verify_result.code, auth_verify_result.message)), None
 
         return None, login_email
-
-    @staticmethod
-    def generate_jwt_token(login_email, secret):
-        token = jwt.encode({'login_email': login_email}, secret)
-        token_utf8 = token.decode('utf-8')
-        return token_utf8
 
     @staticmethod
     def verify_jwt_token(token, login_email):
@@ -290,3 +191,6 @@ class LoginAuthorizer:
         except jwt.DecodeError:
             return AuthVerifyResult(code=constants.AuthVerifyResultCode.token_invalid, message="Token validation failed")
         return AuthVerifyResult(code=constants.AuthVerifyResultCode.success, message="Token validation succeeded")
+
+
+

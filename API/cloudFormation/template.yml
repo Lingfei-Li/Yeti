@@ -11,98 +11,319 @@ Parameters:
   YetiTokensTableName:
     Description: The name of the token information table
     Type: String
-  OutlookOAuthClientId:
-    Description: The client ID used for Outlook OAuth
-    Type: String
-    NoEcho: true
-  OutlookOAuthClientSecret:
-    Description: The client ID used for Outlook OAuth
-    Type: String
-    NoEcho: true
 
 Resources:
-  # Operations on transactions - Lambda functions
-  YetiApiLoadTransactions:
+  ##########################
+  # Payment Service
+  ##########################
+
+  ##### Lambda #####
+  YetiPaymentServiceOutlookNotificationHandler:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: YetiApi-LoadTransactions
-      Handler: yeti_transactions_api.load_transactions
+      FunctionName: Yeti-PaymentService-OutlookNotificationHandler
+      Handler: yeti_api_payment.handle_outlook_notification
       Timeout: 10
       Runtime: python3.6
       Events:
-        LoadTransactions:
+        HandleOutlookNotification:
           Type: Api
           Properties:
-            Path: /transactions
-            Method: get
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - kms:Decrypt
-              Resource: '*'
-      Environment:
-        Variables:
-          OutlookOAuthClientIdCipherText:
-            Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
-          OutlookOAuthClientSecretCipherText:
-            Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
-  YetiApiGetTransactionDetails:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-GetTransactionDetails
-      Handler: yeti_transactions_api.get_transaction_details
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        GetTransactionDetails:
-          Type: Api
-          Properties:
-            Path: /transactions/details/{transactionPlatform}/{transactionId}
-            Method: get
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
-  YetiApiCloseTransaction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-CloseTransaction
-      Handler: yeti_transactions_api.close_transaction
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        CloseTransaction:
-          Type: Api
-          Properties:
-            Path: /transactions/close
+            Path: /payment/outlook-notification
             Method: post
             RestApiId:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
-  YetiApiReopenTransaction:
+        - AmazonKinesisFullAccess
+  YetiPaymentServiceMessageNotificationStreamProcessor:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: YetiApi-ReopenTransaction
-      Handler: yeti_transactions_api.reopen_transaction
+      FunctionName: Yeti-PaymentService-MessageNotificationStreamProcessor
+      Handler: yeti_api_payment.process_message_notification_stream
       Timeout: 10
       Runtime: python3.6
       Events:
-        ReopenTransaction:
+        ProcessMessageNotificationStream:
+          Type: Kinesis
+          Properties:
+            Stream: arn:aws:kinesis:us-west-2:917309224575:stream/Yeti-PaymentService-MessageNotificationStream
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonKinesisReadOnlyAccess
+        - AmazonSNSFullAccess
+
+  ##### DynamoDB #####
+  YetiPaymentServicePaymentTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Yeti-PaymentService-PaymentTable
+      AttributeDefinitions:
+        - AttributeName: payment_id
+          AttributeType: S
+        - AttributeName: payment_method
+          AttributeType: S
+      KeySchema:
+        - AttributeName: payment_id
+          KeyType: HASH
+        - AttributeName: payment_method
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ##### Kinesis #####
+  YetiPaymentServiceMessageNotificationStream:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: Yeti-PaymentService-MessageNotificationStream
+        ShardCount: 1
+
+  ##### SNS #####
+  YetiPaymentServicePaymentNotificationTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: Yeti-PaymentService-PaymentNotificationTopic
+
+  ##########################
+  # Order Service
+  ##########################
+
+  ##### Lambda #####
+  # --- Payment Local View --- #
+  YetiOrderServicePaymentNotificationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-OrderService-PaymentNotificationHandler
+      Handler: yeti_api_order.handle_payment_notification
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        PaymentNotification:
+          Type: SNS
+          Properties:
+            Topic: arn:aws:sns:us-west-2:917309224575:Yeti-PaymentService-PaymentNotificationTopic
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+    YetiOrderServicePaymentNotificationHandlerSNSPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Function: Yeti-OrderService-PaymentNotificationHandler
+            Principal: sns.amazonaws.com
+            Action: Allow
+            SourceArn: arn:aws:sns:us-west-2:917309224575:Yeti-PaymentService-PaymentNotificationTopic
+
+  # --- Ticket Local View --- #
+  YetiOrderServiceTicketNotificationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-OrderService-TicketNotificationHandler
+      Handler: yeti_api_order.handle_ticket_notification
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        TicketNotification:
+          Type: SNS
+          Properties:
+            Topic: arn:aws:sns:us-west-2:917309224575:Yeti-TicketService-TicketNotificationTopic
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+    YetiOrderServiceTicketNotificationHandlerSNSPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            Function: Yeti-OrderService-TicketNotificationHandler
+            Principal: sns.amazonaws.com
+            Action: Allow
+            SourceArn: arn:aws:sns:us-west-2:917309224575:Yeti-TicketService-TicketNotificationTopic
+
+  # --- CRUD API --- #
+  YetiOrderServiceCreateOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-OrderService-CreateOrder
+      Handler: yeti_api_order.create_order
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        CreateOrder:
           Type: Api
           Properties:
-            Path: /transactions/reopen
+            Path: /order/create
             Method: post
             RestApiId:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
 
+  ##### DynamoDB #####
+  YetiOrderServiceOrderTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Yeti-OrderService-OrderTable
+      AttributeDefinitions:
+        - AttributeName: order_id
+          AttributeType: S
+        - AttributeName: order_version
+          AttributeType: N
+      KeySchema:
+        - AttributeName: order_id
+          KeyType: HASH
+        - AttributeName: order_version
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  YetiOrderServiceTicketLocalView:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Yeti-OrderService-TicketLocalView
+      AttributeDefinitions:
+        - AttributeName: ticket_id
+          AttributeType: S
+        - AttributeName: ticket_version
+          AttributeType: N
+      KeySchema:
+        - AttributeName: ticket_id
+          KeyType: HASH
+        - AttributeName: ticket_version
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  YetiOrderServicePaymentLocalView:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Yeti-OrderService-PaymentLocalView
+      AttributeDefinitions:
+        - AttributeName: payment_id
+          AttributeType: S
+        - AttributeName: payment_method
+          AttributeType: S
+      KeySchema:
+        - AttributeName: payment_id
+          KeyType: HASH
+        - AttributeName: payment_method
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+
+  ##########################
+  # Ticket Service
+  ##########################
+
+  ##### Lambda #####
+  YetiTicketServiceCreateTicket:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-TicketService-CreateTicket
+      Handler: yeti_api_ticket.create_ticket
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        CreateOrder:
+          Type: Api
+          Properties:
+            Path: /ticket/create
+            Method: post
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonSNSFullAccess
+
+  ##### DynamoDB #####
+  YetiTicketServiceTicketTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Yeti-TicketService-TicketTable
+      AttributeDefinitions:
+        - AttributeName: ticket_id
+          AttributeType: S
+        - AttributeName: ticket_version
+          AttributeType: N
+      KeySchema:
+        - AttributeName: ticket_id
+          KeyType: HASH
+        - AttributeName: ticket_version
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ##### SNS #####
+  YetiTicketServiceTicketNotificationTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: Yeti-TicketService-TicketNotificationTopic
+
+  ##########################
+  # Auth Service
+  ##########################
+  ##### Lambda #####
+  YetiAuthServiceRenewOutlookSubscription:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-AuthService-RenewOutlookNotificationSubscription
+      Handler: yeti_api_auth.renew_outlook_notification_subscription
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        Sched:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
+            Input: '{"emails": ["yeti-dev@outlook.com"]}'
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonKinesisFullAccess
+      Environment:
+        Variables:
+          NotificationWebhookUrl: "https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/payment/outlook-notification"
+
+  YetiAuthServiceOutlookOAuth:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-AuthService-OutlookOAuth
+      Handler: yeti_api_auth.outlook_oauth
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        OutlookOAuthLogin:
+          Type: Api
+          Properties:
+            Path: /auth-service/outlook-oauth
+            Method: post
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  ##### DynamoDB #####
+  YetiAuthServiceAuthTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Yeti-AuthService-AuthTable
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ##########################
+  # v1.0 - deprecated
+  ##########################
   # Outlook OAuth API - Lambda functions
   YetiApiOutlookOAuth:
     Type: AWS::Serverless::Function
@@ -121,84 +342,6 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - kms:Decrypt
-              Resource: '*'
-      Environment:
-        Variables:
-          OutlookOAuthClientIdCipherText:
-            Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
-          OutlookOAuthClientSecretCipherText:
-            Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
-  YetiApiRefreshAccessToken:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-RefreshAccessToken
-      Handler: yeti_auth_api.refresh_access_token
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        RefreshAccessToken:
-          Type: Api
-          Properties:
-            Path: /user/token/refresh_access_token
-            Method: post
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - kms:Decrypt
-              Resource: '*'
-      Environment:
-        Variables:
-          OutlookOAuthClientIdCipherText:
-            Fn::GetAtt: [EncryptedOutlookOAuthClientId, CipherText]
-          OutlookOAuthClientSecretCipherText:
-            Fn::GetAtt: [EncryptedOutlookOAuthClientSecret, CipherText]
-  YetiApiGmailOAuth:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-GmailOAuth
-      Handler: yeti_auth_api.login_gmail_oauth
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        OutlookOAuthLogin:
-          Type: Api
-          Properties:
-            Path: /user/login/gmail_oauth
-            Method: post
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
-
-  # Sensitive Information Encryption
-  EncryptedOutlookOAuthClientId:  #Get the cipher text with Fn::GetAtt: - <CustomResourceName> - CipherText
-    Type: AWS::CloudFormation::CustomResource
-    Version: "1.0"
-    Properties:
-      ServiceToken:
-        Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CloudFormationKMSResource
-      KeyId: arn:aws:kms:us-west-2:917309224575:key/f5166e7b-7f9d-4353-9099-9fff22e01f5d
-      PlainText:
-        Ref: OutlookOAuthClientId
-  EncryptedOutlookOAuthClientSecret:  #Get the cipher text with Fn::GetAtt: - <CustomResourceName> - CipherText
-    Type: AWS::CloudFormation::CustomResource
-    Version: "1.0"
-    Properties:
-      ServiceToken:
-        Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CloudFormationKMSResource
-      KeyId: arn:aws:kms:us-west-2:917309224575:key/f5166e7b-7f9d-4353-9099-9fff22e01f5d
-      PlainText:
-        Ref: OutlookOAuthClientSecret
 
   # DynamoDB Tables
   YetiTransactionsTable:

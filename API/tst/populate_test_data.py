@@ -1,5 +1,5 @@
 import json
-import yeti_dynamodb
+import aws_client_dynamodb
 from test_data import transactions, logins
 import random
 import pprint
@@ -63,9 +63,9 @@ for i in range(data_count):
         "FriendId": friend_id,
         "FriendName": friend_name,
         "Comments": "1 Ski Tickets for " + location,
-        "SerializedUpdateHistory": "[]"
+        "UpdateHistory": "[]"
     }
-    response = yeti_dynamodb.transactions_table.put_item(
+    response = aws_client_dynamodb.transactions_table.put_item(
         Item=data
     )
 

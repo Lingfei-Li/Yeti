@@ -1,11 +1,11 @@
 import datetime
 import logging
 import outlook_service
-import yeti_auth_service
+import yeti_service_auth
 from yeti_auth_authorizers import LoginAuthorizer, OutlookAuthorizer
 import yeti_email_parser
 import time
-from yeti_dynamodb import transactions_table, logins_table, tokens_table
+from aws_client_dynamodb import transactions_table, logins_table, tokens_table
 from bs4 import BeautifulSoup
 
 from botocore.exceptions import ClientError
@@ -18,7 +18,7 @@ logger = logging.getLogger("EmailTransformationTest")
 
 
 def update_user_transactions(user_email):
-    access_token = yeti_auth_service.get_access_token_for_email(user_email)
+    access_token = yeti_service_auth.get_access_token_for_email(user_email)
 
     last_processed_datetime = yeti_email_service.get_last_processed_datetime(user_email)
     if last_processed_datetime is None:

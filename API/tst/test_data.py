@@ -1,70 +1,45 @@
-transactions = [
+tickets = [
   {
-    "TransactionId": "payment-100",
-    "TransactionPlatform": "venmo",
-    "UserEmail": "yeti-dev@outlook.com",
-    "UserId": "Yeti-Dev",
-    "TransactionUnixTimestamp": 1513890388,
-    "Amount": 59,
-    "StatusCode": 0,
-    "FriendId": "John-Doe",
-    "FriendName": "John Doe",
-    "Comments": "1 Stevens Ski Tickets",
-    "SerializedUpdateHistory": "[]"
+    "TicketId": "ticket-1",
+    "TicketVersion": 1,
+    "TicketAmount": 25,
+    "TicketType": "Snoqualmie Adult All-day",
+    "DistributorId": "lingfeil",
+    "DistributionLocation": "Port 99 10.I5",
+    "DistributionStartDateTime": "2018-02-04T20:00:00Z",
+    "DistributionEndDateTime": "2018-02-04T20:30:00Z",
+    "WalkInStartDateTime": "2018-02-04T20:30:00Z",
+    "WalkInEndDateTime": "2018-02-04T21:00:00Z",
+    "PropertyChangeSet": None,
+    "StatusCode": 0
   },
   {
-    "TransactionId": "payment-101",
-    "TransactionPlatform": "venmo",
-    "UserEmail": "yeti-dev@outlook.com",
-    "UserId": "Yeti-Dev",
-    "Amount": 59,
-    "StatusCode": 0,
-    "TransactionUnixTimestamp": 1515817910,
-    "FriendId": "John-Doe",
-    "FriendName": "John Doe",
-    "Comments": "1 Stevens Ski Tickets",
-    "SerializedUpdateHistory": "[]"
-  },
-  {
-    "TransactionId": "payment-200",
-    "TransactionPlatform": "venmo",
-    "UserEmail": "yeti-dev@outlook.com",
-    "UserId": "Yeti-Dev",
-    "Amount": 118,
-    "StatusCode": 1,
-    "TransactionUnixTimestamp": 1513544787,
-    "FriendId": "Homer-Simpson-1",
-    "FriendName": "Homer Simpson",
-    "Comments": "2 Crystal Ski Tickets",
-    "SerializedUpdateHistory": "[]"
-  },
-  {
-    "TransactionId": "payment-300",
-    "TransactionPlatform": "venmo",
-    "UserEmail": "yeti-dev@outlook.com",
-    "UserId": "Yeti-Dev",
-    "Amount": 118,
-    "StatusCode": 0,
-    "TransactionUnixTimestamp": 1513139509,
-    "FriendId": "Tom_and_Jerry",
-    "FriendName": "Tom Jerry",
-    "Comments": "2 Snoqualmie Ski Tickets",
-    "SerializedUpdateHistory": "[]"
-  },
-  {
-    "TransactionId": "payment-400",
-    "TransactionPlatform": "venmo",
-    "UserEmail": "yeti-dev@outlook.com",
-    "UserId": "Yeti-Dev",
-    "Amount": 59,
-    "StatusCode": 0,
-    "TransactionUnixTimestamp": 1510720309,
-    "FriendId": "Tom_and_Jerry",
-    "FriendName": "Tom Jerry",
-    "Comments": "1 Snoqualmie Ski Ticket",
-    "SerializedUpdateHistory": "[]"
+    "TicketId": "ticket-2",
+    "TicketVersion": 1,
+    "TicketAmount": 10,
+    "TicketType": "Stevens Adult Daytime",
+    "DistributorId": "lzexi",
+    "DistributionLocation": "Port 99 10.N5",
+    "DistributionStartDateTime": "2018-02-05T21:30:00Z",
+    "DistributionEndDateTime": "2018-02-05T22:00:00Z",
+    "WalkInStartDateTime": "2018-02-04T22:00:00Z",
+    "WalkInEndDateTime": "2018-02-04T22:30:00Z",
+    "PropertyChangeSet": None,
+    "StatusCode": 0
   }
 ]
 
-logins = [
+orders = [
+  {
+    "OrderId": "order-1",
+    "OrderVersion": 1,
+    "TicketId": "ticket-1",
+    "TicketVersion": 1,
+    "PurchaseAmount": 3,
+    "OrderDateTime": "2018-02-01T18:30:00Z",
+    "ExpiryDateTime": "2018-02-01T18:40:00Z",
+    "PaymentIdList": [],
+    "PropertyChangeSet": None,
+    "StatusCode": 0
+  }
 ]

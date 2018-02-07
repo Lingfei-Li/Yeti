@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 # parses email in html format and returns a hash of key/value pairs derived from the email
 def parse(email_html):
-    transaction_information = dict()
+    payment = dict()
 
     h = html2text.HTML2Text()
     h.ignore_links = False
@@ -25,26 +25,25 @@ def parse(email_html):
 
     try:
         # gather my_venmo_id, payer_venmo_id, payer_name, amount
-        transaction_information.update(parse_payer_information(email_md))
+        payment.update(parse_payer_information(email_md))
 
         # payment_id
-        transaction_information.update(parse_payment_id(email_md))
+        payment.update(parse_payment_id(email_md))
 
-        # time, amount
-        transaction_information.update(parse_time_amount_information(email_md))
+        # time, amount(string type)
+        payment.update(parse_time_amount_information(email_md))
 
         # comments
-        transaction_information.update(parse_comments(email_html))
+        payment.update(parse_comments(email_html))
 
         # thumbnail
-        transaction_information.update(parse_thumbnail(email_html))
+        payment.update(parse_thumbnail(email_html))
     except Exception as e:
         raise yeti_exceptions.EmailTransformationErrorException(e)
 
-    return transaction_information
+    return payment
 
 
-# TODO: Need to merge regex, since all of them are next to each other and merging all regex makes matching "comments" field more reliable
 def parse_payer_information(email_md):
     name_id_matching_pattern = "\[([a-zA-Z\ ]+)\]\(https:\/\/venmo\.com\/([a-zA-Z\-0-9]{5,16})\)"
     action_matching_pattern = "(charged |paid )"
@@ -81,8 +80,7 @@ def parse_payment_id(email_md):
     payment_id_regex = "Payment ID: ([0-9]{19})"
     m = re.search(payment_id_regex, email_md)
 
-    # print m.groups()
-    keys = ["transaction_id"]
+    keys = ["payment_id"]
     return append_key_value(keys, m)
 
 

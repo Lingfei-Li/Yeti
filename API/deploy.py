@@ -4,7 +4,7 @@ import shutil
 import os.path
 from colorama import init, Fore
 from cloudformation_config import config
-from secret_config import secret_config
+from secret_config import outlook_credentials
 
 init()
 
@@ -38,8 +38,8 @@ try:
                     config["YetiTransactionsTableName"],
                     config["YetiLoginsTableName"],
                     config["YetiTokensTableName"],
-                    secret_config["OutlookOAuthClientId"],
-                    secret_config["OutlookOAuthClientSecret"]
+                    outlook_credentials["OutlookOAuthClientId"],
+                    outlook_credentials["OutlookOAuthClientSecret"]
                     ],
                    shell=True, check=True)
     # subprocess.run(["deploymentScripts\clean.bat",

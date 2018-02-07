@@ -1,7 +1,7 @@
 import pprint
-import yeti_dynamodb
+import aws_client_dynamodb
 
-response = yeti_dynamodb.transactions_table.scan()
+response = aws_client_dynamodb.transactions_table.scan()
 
 pp = pprint.PrettyPrinter(indent=2)
 
