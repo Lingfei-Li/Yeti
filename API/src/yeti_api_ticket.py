@@ -1,19 +1,17 @@
-import logging
 import traceback
 
 import aws_client_sns
 import yeti_api_response
 import aws_client_dynamodb
 import yeti_exceptions
+import yeti_logging
 import yeti_models
 import yeti_utils_lambda_handler
 
-logger = logging.getLogger("YetiTicketApi")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiTicketApi")
 
 
 # Lambda handler for create ticket, update ticket, etc
-
 def create_ticket(event, context):
     logger.info("Received a create ticket request: {}".format(event))
 

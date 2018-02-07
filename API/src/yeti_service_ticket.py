@@ -1,20 +1,6 @@
-import datetime
-import logging
-import json
-import traceback
+import yeti_logging
 
-import aws_client_dynamodb
-import uuid
-import yeti_api_response
-
-import yeti_exceptions
-import yeti_models
-import yeti_service_order
-import yeti_utils_lambda_handler
-from aws_client_kinesis import PaymentServiceMessageNotificationStream
-
-logger = logging.getLogger("YetiTicketService")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiTicketService")
 
 
 def get_ticket(ticket_id):

@@ -1,17 +1,15 @@
-import logging
-
 import re
 import datetime
 
 import aws_client_dynamodb
 import outlook_service
+import yeti_logging
 import yeti_models
 from yeti_models import AuthVerifyResultCode
 import yeti_exceptions
 from yeti_utils_auth import OutlookAuthorizer
 
-logger = logging.getLogger("YetiAuthService")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiAuthService")
 
 
 def oauth_login(auth_code):

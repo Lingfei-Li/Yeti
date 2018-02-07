@@ -1,15 +1,8 @@
 import decimal
-import json
 
-import html2text
-import re
-import logging
-from bs4 import BeautifulSoup
+import yeti_logging
 
-import yeti_exceptions
-
-logger = logging.getLogger("YetiCommonUtils")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiCommonUtils")
 
 
 def replace_decimals(obj):

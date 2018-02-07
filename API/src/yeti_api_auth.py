@@ -1,17 +1,16 @@
 import datetime
-import logging
 import traceback
 
 import outlook_service
 import aws_client_dynamodb
 import yeti_api_response
 import yeti_exceptions
+import yeti_logging
 import yeti_service_auth
 import yeti_utils_lambda_handler
 from yeti_utils_auth import LoginAuthorizer
 
-logger = logging.getLogger("YetiAuthApi")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiAuthApi")
 
 
 def renew_outlook_notification_subscription(event, context):

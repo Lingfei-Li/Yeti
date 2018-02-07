@@ -1,14 +1,12 @@
-import logging
-
 from decimal import Decimal
-
 import dateutil.parser
+
 import yeti_exceptions
+import yeti_logging
 import yeti_utils_email
 from yeti_models import Payment
 
-logger = logging.getLogger("YetiEmailService")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiEmailService")
 
 ############################
 # Constants

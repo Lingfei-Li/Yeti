@@ -2,6 +2,7 @@ import boto3
 import logging
 
 import yeti_exceptions
+import yeti_logging
 import yeti_models
 
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
@@ -9,8 +10,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
 ##############################################
 # v2.0 DynamoDB clients
 ##############################################
-logger = logging.getLogger("YetiDynamoDB")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiDynamoDB")
 
 
 class DynamoDBTable:
@@ -31,10 +31,10 @@ class DynamoDBTable:
             table = dynamodb.Table(table_name)
             table.get_item(Key=key)
         except yeti_exceptions.DatabaseItemNotFoundError:
-            return True
+            return False
         except Exception as e:
             raise yeti_exceptions.DatabaseAccessErrorException("Failed to read database {} for key: {}. Error: {}".format(table_name, key, e))
-        return False
+        return True
 
     @staticmethod
     def get_item(table_name, key, model_cls):

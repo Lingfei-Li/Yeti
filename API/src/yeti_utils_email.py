@@ -1,12 +1,12 @@
 import html2text
 import re
-import logging
+
+import yeti_logging
 from bs4 import BeautifulSoup
 
 import yeti_exceptions
 
-logger = logging.getLogger("YetiEmailParser")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiEmailUtils")
 
 # Venmo Naming Conventions:
 # First/Last Name - Letters Only

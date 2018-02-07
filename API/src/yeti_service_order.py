@@ -1,14 +1,12 @@
 import datetime
-import logging
-import json
 import uuid
 
 import yeti_exceptions
+import yeti_logging
 import yeti_models
 import yeti_service_ticket
 
-logger = logging.getLogger("YetiOrderService")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiOrderService")
 
 
 def create_order(ticket_id, purchase_amount, buyer_id):

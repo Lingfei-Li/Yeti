@@ -1,4 +1,3 @@
-import logging
 import json
 import traceback
 
@@ -7,14 +6,14 @@ import outlook_service
 import yeti_api_response as api_response
 import aws_client_dynamodb
 import yeti_exceptions
+import yeti_logging
 import yeti_service_email
 from aws_client_kinesis import PaymentServiceMessageNotificationStream
 from yeti_service_payment import publish_message_notifications_to_stream
 from yeti_models import MessageNotificationStreamRecord
 import yeti_service_auth
 
-logger = logging.getLogger("YetiPaymentApi")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiPaymentApi")
 
 
 def handle_outlook_notification(event, context):

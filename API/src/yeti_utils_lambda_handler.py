@@ -1,14 +1,9 @@
 import json
 
-import html2text
-import re
-import logging
-from bs4 import BeautifulSoup
-
 import yeti_exceptions
+import yeti_logging
 
-logger = logging.getLogger("YetiLambdaHandlerUtils")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiLambdaHandlerUtils")
 
 
 def get_body(event):

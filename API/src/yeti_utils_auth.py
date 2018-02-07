@@ -1,16 +1,12 @@
 import jwt
 import requests
-
-import html2text
-import re
-import logging
+import yeti_logging
 
 import yeti_models
 from secret_config import outlook_credentials
 from yeti_models import AuthVerifyResult, AuthVerifyResultCode, OAuthCredentials
 
-logger = logging.getLogger("YetiAuthorizers")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiAuthUtils")
 
 
 class OutlookAuthorizer:

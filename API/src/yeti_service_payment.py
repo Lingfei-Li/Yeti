@@ -1,10 +1,7 @@
-import logging
-import json
-
+import yeti_logging
 from aws_client_kinesis import PaymentServiceMessageNotificationStream
 
-logger = logging.getLogger("YetiPaymentService")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiPaymentService")
 
 
 def publish_message_notifications_to_stream(message_notification_stream_records):

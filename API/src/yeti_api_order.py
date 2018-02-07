@@ -1,16 +1,15 @@
-import logging
 import json
 import traceback
 
 import yeti_api_response
 import aws_client_dynamodb
 import yeti_exceptions
+import yeti_logging
 import yeti_models
 import yeti_service_order
 import yeti_utils_lambda_handler
 
-logger = logging.getLogger("YetiOrderApi")
-logger.setLevel(logging.INFO)
+logger = yeti_logging.get_logger("YetiOrderApi")
 
 
 def handle_payment_notification(event, context):
