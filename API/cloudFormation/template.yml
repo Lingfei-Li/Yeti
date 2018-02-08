@@ -14,6 +14,17 @@ Parameters:
 
 Resources:
   ##########################
+  # Common Resources
+  ##########################
+  # API Gateway
+  ProjectYetiApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: ProjecYetiApi
+      StageName: prod
+      DefinitionUri: swagger.yml
+
+  ##########################
   # Payment Service
   ##########################
 
@@ -63,16 +74,24 @@ Resources:
       AttributeDefinitions:
         - AttributeName: payment_id
           AttributeType: S
-        - AttributeName: payment_method
+        - AttributeName: venmo_story_id
           AttributeType: S
       KeySchema:
         - AttributeName: payment_id
           KeyType: HASH
-        - AttributeName: payment_method
-          KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: "VenmoStoryIdIndex"
+          KeySchema:
+            - AttributeName: "venmo_story_id"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
 
   ##### Kinesis #####
   YetiPaymentServiceMessageNotificationStream:
@@ -203,13 +222,9 @@ Resources:
       AttributeDefinitions:
         - AttributeName: payment_id
           AttributeType: S
-        - AttributeName: payment_method
-          AttributeType: S
       KeySchema:
         - AttributeName: payment_id
           KeyType: HASH
-        - AttributeName: payment_method
-          KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -299,7 +314,7 @@ Resources:
         OutlookOAuthLogin:
           Type: Api
           Properties:
-            Path: /auth-service/outlook-oauth
+            Path: /auth/outlook-oauth
             Method: post
             RestApiId:
               Ref: ProjectYetiApi
@@ -321,80 +336,3 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-  ##########################
-  # v1.0 - deprecated
-  ##########################
-  # Outlook OAuth API - Lambda functions
-  YetiApiOutlookOAuth:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: YetiApi-OutlookOAuth
-      Handler: yeti_auth_api.login_outlook_oauth
-      Timeout: 10
-      Runtime: python3.6
-      Events:
-        OutlookOAuthLogin:
-          Type: Api
-          Properties:
-            Path: /user/login/outlook_oauth
-            Method: post
-            RestApiId:
-              Ref: ProjectYetiApi
-      Policies:
-        - AmazonDynamoDBFullAccess
-
-  # DynamoDB Tables
-  YetiTransactionsTable:
-    Type: "AWS::DynamoDB::Table"
-    Properties:
-      TableName:
-        Ref: YetiTransactionsTableName
-      AttributeDefinitions:
-        - AttributeName: "TransactionId"
-          AttributeType: "S"
-        - AttributeName: "TransactionPlatform"
-          AttributeType: "S"
-      KeySchema:
-        - AttributeName: "TransactionId"
-          KeyType: "HASH"
-        - AttributeName: "TransactionPlatform"
-          KeyType: "RANGE"
-      ProvisionedThroughput:
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-  YetiLoginsTable:
-    Type: "AWS::DynamoDB::Table"
-    Properties:
-      TableName:
-        Ref: YetiLoginsTableName
-      AttributeDefinitions:
-        - AttributeName: "Email"
-          AttributeType: "S"
-      KeySchema:
-        - AttributeName: "Email"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-  YetiTokensTable:
-    Type: "AWS::DynamoDB::Table"
-    Properties:
-      TableName:
-        Ref: YetiTokensTableName
-      AttributeDefinitions:
-        - AttributeName: "Email"
-          AttributeType: "S"
-      KeySchema:
-        - AttributeName: "Email"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-
-  # API Gateway
-  ProjectYetiApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: ProjecYetiApi
-      StageName: prod
-      DefinitionUri: swagger.yml

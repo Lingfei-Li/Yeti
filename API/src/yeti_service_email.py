@@ -1,4 +1,6 @@
 from decimal import Decimal
+
+import aws_client_dynamodb
 import dateutil.parser
 
 import yeti_exceptions
@@ -15,19 +17,43 @@ YOU = "You "
 ISO8601_FORMAT_TEMPLATE = "%Y-%m-%dT%H:%M:%SZ"
 
 
+def check_email_type(email):
+    return yeti_utils_email.check_content_type(email_subject=email['Subject'])
+
+
+def extract_order_id_from_email(email):
+    logger.info("Extract order id from email")
+
+    email_content_type = yeti_utils_email.check_content_type(email_subject=email['Subject'])
+    if email_content_type != yeti_utils_email.EmailContentType.payment_comment:
+        raise yeti_exceptions.EmailTransformationErrorException('The email content is not a comment on a venmo transaction')
+
+    order_id, venmo_story_id = yeti_utils_email.parse_venmo_comment_email(email_body_html=email['Body']['Content'])
+
+    if order_id is None:
+        raise yeti_exceptions.YetiInvalidPaymentEmailException('No valid order id found in the email')
+
+    payment_id = aws_client_dynamodb.PaymentServicePaymentTable.get_payment_id_for_venmo_story_id(venmo_story_id)
+
+    return payment_id, order_id
+
+
 def extract_payment_from_email(email):
     """
     Extract the payment data from the email
 
-    :param email: the email (JSON object) to be transformed
+    :param email: the email (object) to be transformed
     :return: the extracted Payment data
     """
 
     logger.info("Extract payment from email")
-    payment = yeti_utils_email.parse(email['Body']['Content'])
 
+    email_content_type = yeti_utils_email.check_content_type(email_subject=email['Subject'])
+    if email_content_type != yeti_utils_email.EmailContentType.new_payment:
+        raise yeti_exceptions.EmailTransformationErrorException('The email content is not a valid venmo payment')
+
+    payment = yeti_utils_email.parse_venmo_payment_email(email_body_html=email['Body']['Content'])
     logger.info("Payment parsed: {}".format(payment))
-
     if payment['operator'] != "+":
         raise yeti_exceptions.YetiInvalidPaymentEmailException()
 
@@ -43,18 +69,20 @@ def extract_payment_from_email(email):
         # TODO: raise yeti_exceptions.YetiInvalidPaymentEmailException() when in production
 
     payment_id = payment['payment_id']
-    payment_method = 'venmo'
+    venmo_story_id = payment['venmo_story_id']
     amount = payment['amount']
+    order_id = payment['order_id']
     comments = payment['comments']
     email_received_datetime = email['ReceivedDateTime']  # 'ReceivedDateTime': '2018-01-15T16:31:46Z'
 
     payment_item = Payment.build(payment_id=payment_id,
-                                 payment_method=payment_method,
+                                 venmo_story_id=venmo_story_id,
                                  payer_id=payer_id,
                                  payment_amount=Decimal(str(amount)),
                                  payment_datetime=dateutil.parser.parse(email_received_datetime),
-                                 order_id=comments,
                                  comments=[comments])
-    return payment_item
+    return payment_item, order_id
+
+
 
 

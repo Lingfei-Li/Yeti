@@ -90,15 +90,14 @@ def get_messages(access_token, user_email, last_processed_date_str_iso8601=None)
 
     select_expr = 'receivedDateTime,subject,body,from'
     filter_expr = '(From/EmailAddress/Address eq \'venmo@venmo.com\')'
-    if last_processed_date_str_iso8601 is not None:
-        # Note the insertion order of the new expression. Fields in 'orderby' must come first in 'filter' and must be in the same order
-        # For details: https://stackoverflow.com/a/41026120/1387710
-        filter_expr = '(ReceivedDateTime gt {}) and '.format(last_processed_date_str_iso8601) + filter_expr
-        order_by_expr = 'receivedDateTime DESC'
-    else:
-        # Fields in 'order by' must be present in 'filter', otherwise Outlook complains "Inefficient Error".
-        # For details: https://stackoverflow.com/a/41026120/1387710
-        order_by_expr = 'From/EmailAddress/Address DESC'
+    if last_processed_date_str_iso8601 is None:
+        last_processed_date_str_iso8601 = '1970-01-01T00:00:00Z'
+    # Note the insertion order of the new expression. Fields in 'orderby' must come first in 'filter' and must be in the same order
+    # For details: https://stackoverflow.com/a/41026120/1387710
+
+    # filter_expr = '(ReceivedDateTime gt {}) and '.format(last_processed_date_str_iso8601) + filter_expr
+    filter_expr = '(ReceivedDateTime gt {})'.format(last_processed_date_str_iso8601)    # TODO: delete this line
+    order_by_expr = 'receivedDateTime DESC'
 
     query_parameters = {'$filter': filter_expr,
                         '$select': select_expr,
@@ -107,10 +106,13 @@ def get_messages(access_token, user_email, last_processed_date_str_iso8601=None)
 
     r = make_api_call('GET', get_messages_url, access_token, user_email, parameters=query_parameters)
 
+    if r.status_code == requests.codes.unauthorized:
+        raise yeti_exceptions.YetiAuthInvalidTokenException("Invalid authorization when trying to get messages. Response: {}".format(r))
+
     try:
         response = r.json()
     except Exception as e:
-        raise yeti_exceptions.OutlookApiErrorException("Failed to transform response text to JSON: {}".format(e))
+        raise yeti_exceptions.OutlookApiErrorException("Failed to transform response text to JSON: {}, raw response: {}".format(e, r))
 
     if r.status_code != requests.codes.ok or ('error' in response and response['error']):
         if 'code' in response['error'] and response['error']['code'] == 'InvalidAuthenticationToken':

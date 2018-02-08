@@ -7,7 +7,9 @@ import yeti_api_response as api_response
 import aws_client_dynamodb
 import yeti_exceptions
 import yeti_logging
+import yeti_models
 import yeti_service_email
+import yeti_utils_email
 from aws_client_kinesis import PaymentServiceMessageNotificationStream
 from yeti_service_payment import publish_message_notifications_to_stream
 from yeti_models import MessageNotificationStreamRecord
@@ -87,20 +89,53 @@ def process_message_notification_stream(event, context):
                 email_object = outlook_service.get_message_for_id(notification['message_id'], access_token, user_email)
                 logger.info("Message retrieved: {}".format(email_object))
 
-                try:
-                    payment_item = yeti_service_email.extract_payment_from_email(email_object)
-                    logger.info("Payment extracted")
-                except yeti_exceptions.YetiInvalidPaymentEmailException:
-                    # Email is not relevant to payment. Ignoring.
-                    continue
+                email_content_type = yeti_service_email.check_email_type(email_object)
 
-                aws_client_dynamodb.PaymentServicePaymentTable.put_payment_item(payment_item)
-                logger.info("Payment inserted to db")
+                if email_content_type == yeti_utils_email.EmailContentType.new_payment:
+                    # Parse the email and extract the payment information
+                    try:
+                        payment_item, order_id = yeti_service_email.extract_payment_from_email(email_object)
+                        logger.info("Payment extracted")
+                    except yeti_exceptions.YetiInvalidPaymentEmailException as e:
+                        # Email is not relevant to payment. Ignoring.
+                        logger.info("Failed to extract payment from email. Error: ".format(e))
+                        continue
 
-                # Notify other services about the payment via SNS
-                payment_notification_message = payment_item  # Publish the entire payment object to SNS to create a local view in Order service
-                aws_client_sns.PaymentServicePaymentNotificationTopic.publish_message(payment_notification_message)
-                logger.info("Payment notification published to SNS")
+                    aws_client_dynamodb.PaymentServicePaymentTable.put_payment_item(payment_item)
+                    logger.info("Payment inserted to db")
+
+                    # Notify other services about the payment via SNS
+                    payment_notification_message = yeti_models.PaymentSNSMessageRecord.build(notification_type=yeti_models.PaymentSNSMessageRecordType.new_payment,
+                                                                                             serialized_data=payment_item.to_json(),
+                                                                                             order_id=order_id)
+                    aws_client_sns.PaymentServicePaymentNotificationTopic.publish_message(payment_notification_message)
+                    logger.info("Payment notification published to SNS")
+
+                elif email_content_type == yeti_utils_email.EmailContentType.payment_comment:
+                    # Parse the email and extract the order id and payment id
+                    try:
+                        payment_id, order_id = yeti_service_email.extract_order_id_from_email(email_object)
+                        logger.info("Extracted order id: {}, payment id: {}".format(order_id, payment_id))
+                    except yeti_exceptions.YetiInvalidPaymentEmailException as e:
+                        logger.info("Failed to extract order id from email. Error: ".format(e))
+                        continue
+
+                    # Send the order id and payment id to order service. Order service will handle all cases
+                    payment_update = {
+                        "payment_id": payment_id
+                    }
+                    payment_notification_message = yeti_models.PaymentSNSMessageRecord.build(notification_type=yeti_models.PaymentSNSMessageRecordType.order_id_update,
+                                                                                             serialized_data=json.dumps(payment_update),
+                                                                                             order_id=order_id)
+                    aws_client_sns.PaymentServicePaymentNotificationTopic.publish_message(payment_notification_message)
+                    logger.info("Order id update notification published to SNS")
+
+                elif email_content_type == yeti_utils_email.EmailContentType.venmo_transaction_history:
+                    pass
+                elif email_content_type == yeti_utils_email.EmailContentType.others:
+                    pass
+                else:
+                    pass
 
             elif change_type == MessageNotificationStreamRecord.change_type_missed:
                 logger.info("Change type == missed. Actively checking mailbox")

@@ -22,6 +22,7 @@ def renew_outlook_notification_subscription(event, context):
 
     # Get the subscription id for the email address in the request
     for email in emails:
+        logger.info("Checking outlook notification subscription for ".format(email))
         try:
             access_token = yeti_service_auth.get_access_token_for_email(email)
             subscription_id, subscription_expiry_datetime = yeti_service_auth.get_outlook_notification_subscription_for_email(email)
@@ -50,8 +51,9 @@ def renew_outlook_notification_subscription(event, context):
 
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error("Failed to renew/create outlook notification subscription for {}. Error: {}".format(email, e))
+            logger.error("Failed to renew/create outlook notification subscription for {}".format(email))
             raise e
+    logger.info("Subscriptions for all emails checked.")
 
 
 def outlook_oauth(event, context):

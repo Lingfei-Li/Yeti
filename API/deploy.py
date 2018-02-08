@@ -1,14 +1,10 @@
 import subprocess
-import json
 import shutil
 import os.path
-from colorama import init, Fore
 from cloudformation_config import config
 from secret_config import outlook_credentials
 
-init()
-
-print(Fore.CYAN + "Copying CloudFormation template file to deployment directory")
+print("Copying CloudFormation template file to deployment directory")
 
 swaggerSrcPath = os.path.join('.', config['SwaggerDir'],
                               config['SwaggerFilename'])
@@ -45,9 +41,9 @@ try:
     # subprocess.run(["deploymentScripts\clean.bat",
     #                 config["DeploymentBucketName"]], shell=True, check=True)
 
-    print(Fore.GREEN + "Serverless Deployment completed")
+    print("Serverless Deployment completed")
 
-    print(Fore.CYAN + "Removing CloudFormation and SAM template file from deployment directory")
+    print("Removing CloudFormation and SAM template file from deployment directory")
 
     if os.path.exists(cfnTemplateDeployPath):
         os.remove(cfnTemplateDeployPath)
@@ -60,7 +56,7 @@ except subprocess.CalledProcessError as e:
     code = e.returncode  # Return code
     print(out_bytes)
     print(code)
-    print(Fore.RED + "Deployment Failed")
+    print("Deployment Failed")
     exit(0)
 
-print(Fore.GREEN + "Deployment Succeeded")
+print("Deployment Succeeded")

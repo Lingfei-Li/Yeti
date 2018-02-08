@@ -85,7 +85,7 @@ class ChangeSet(YetiModel):
         for c in message['changed_properties']:
             changed_properties.append(PropertyChange.from_sns_message(c))
         return ChangeSet.build(operator_id=message['operator_id'],
-                               change_datetime=message['change_datetime'],
+                               change_datetime=dateutil.parser.parse(message['change_datetime']),
                                changed_properties=changed_properties,
                                notes=message['notes']
                                )
@@ -122,37 +122,55 @@ class PropertyChange(YetiModel):
 ##############################################
 class Payment(YetiModel):
     payment_id = None
-    payment_method = None
+    venmo_story_id = None
     payer_id = None
     payment_amount = None
     payment_datetime = None
-    order_id = None
+    applied_order_id = None
     comments = None
 
     @classmethod
-    def build(cls, payment_id, payment_method, payer_id, payment_amount, payment_datetime, order_id, comments):
+    def build(cls, payment_id, venmo_story_id, payer_id, payment_amount, payment_datetime, comments, applied_order_id=None):
         obj = cls()
         obj.payment_id = payment_id
-        obj.payment_method = payment_method
+        obj.venmo_story_id = venmo_story_id
         obj.payer_id = payer_id
         obj.payment_amount = Decimal(payment_amount)   # string
         obj.payment_datetime = payment_datetime
-        obj.order_id = order_id
         obj.comments = comments
+        obj.applied_order_id = applied_order_id  # used only in OrderService payment local view. left None in PaymentTable
         return obj
 
     @staticmethod
     def from_sns_message(message):
         try:
             return Payment.build(payment_id=message['payment_id'],
-                                 payment_method=message['payment_method'],
+                                 venmo_story_id=message['venmo_story_id'],
                                  payer_id=message['payer_id'],
                                  payment_amount=Decimal(str(message['payment_amount'])),
-                                 payment_datetime=message['payment_datetime'],
-                                 order_id=message['order_id'],
+                                 payment_datetime=dateutil.parser.parse(message['payment_datetime']),
                                  comments=message['comments'])
         except Exception as e:
             raise yeti_exceptions.YetiApiBadEventBodyException(e)
+
+
+class PaymentSNSMessageRecordType(YetiModel):
+    new_payment = 0
+    order_id_update = 1
+
+
+class PaymentSNSMessageRecord(YetiModel):
+    notification_type = None
+    serialized_data = None
+    order_id = None
+
+    @classmethod
+    def build(cls, notification_type, serialized_data, order_id):
+        obj = cls()
+        obj.notification_type = notification_type
+        obj.serialized_data = serialized_data
+        obj.order_id = order_id
+        return obj
 
 
 class MessageNotificationStreamRecord(YetiModel):
@@ -222,10 +240,10 @@ class Ticket(YetiModel):
                                 ticket_type=message['ticket_type'],
                                 distributor_id=message['distributor_id'],
                                 distribution_location=message['distribution_location'],
-                                distribution_start_datetime=message['distribution_start_datetime'],
-                                distribution_end_datetime=message['distribution_end_datetime'],
-                                walk_in_start_datetime=message['walk_in_start_datetime'],
-                                walk_in_end_datetime=message['walk_in_end_datetime'],
+                                distribution_start_datetime=dateutil.parser.parse(message['distribution_start_datetime']),
+                                distribution_end_datetime=dateutil.parser.parse(message['distribution_end_datetime']),
+                                walk_in_start_datetime=dateutil.parser.parse(message['walk_in_start_datetime']),
+                                walk_in_end_datetime=dateutil.parser.parse(message['walk_in_end_datetime']),
                                 change_set=ChangeSet.from_sns_message(message['change_set']),
                                 status_code=Decimal(str(message['status_code']))
                                 )
@@ -246,6 +264,7 @@ class Order(YetiModel):
     order_version = None
     ticket_id = None
     ticket_version = None
+    buyer_id = None
     purchase_amount = None
     order_datetime = None
     expiry_datetime = None
@@ -254,19 +273,31 @@ class Order(YetiModel):
     status_code = None
 
     @classmethod
-    def build(cls, order_id, order_version, ticket_id, ticket_version, purchase_amount, order_datetime, expiry_datetime, payment_id_list=None, change_set=None, status_code=None):
+    def build(cls, ticket_id, ticket_version, buyer_id, purchase_amount, order_datetime, expiry_datetime, order_id=None, order_version=None, payment_id_list=None, change_set=None, status_code=None):
         obj = cls()
-        obj.order_id = order_id
-        obj.order_version = order_version
         obj.ticket_id = ticket_id
         obj.ticket_version = ticket_version
+        obj.buyer_id = buyer_id
         obj.purchase_amount = purchase_amount
         obj.order_datetime = order_datetime
         obj.expiry_datetime = expiry_datetime
         obj.payment_id_list = [] if payment_id_list is None else payment_id_list
         obj.change_set = change_set
         obj.status_code = OrderStatusCode.created if status_code is None else status_code
+
+        # Compute the order_id with the order details fields
+        obj.order_id = yeti_utils_common.generate_id_md5_digit_20_for_object(obj) if order_id is None else order_id
+        obj.order_version = Decimal(1) if order_version is None else Decimal(order_version)
         return obj
+
+    @classmethod
+    def get_raw_hash(cls, order_item):
+        """ Generate a hash for the order details (excluding order id and order version) """
+        obj = copy.deepcopy(order_item)
+        obj.order_id = None
+        obj.order_version = None
+        raw_order_id = yeti_utils_common.generate_id_md5_digit_20_for_object(obj)
+        return raw_order_id
 
 
 class OrderStatusCode:

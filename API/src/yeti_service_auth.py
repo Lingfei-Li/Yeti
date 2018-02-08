@@ -36,7 +36,7 @@ def oauth_login(auth_code):
                                        access_token=access_token,
                                        refresh_token=refresh_token,
                                        token_expiry_datetime=expiry_datetime,
-                                       auth_method='oauth_outlook'
+                                       auth_type='oauth_outlook'
                                        )
 
     # Save or update token in DDB
