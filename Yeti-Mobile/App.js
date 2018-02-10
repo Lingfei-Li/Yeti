@@ -1,27 +1,15 @@
-import React from 'react';
-import {StackNavigator} from 'react-navigation';
-import Routers from './src/Routers';
-
-import {Provider} from 'mobx-react/native';
-import store from './src/store';
+import {DrawerNavigator, StackNavigator} from 'react-navigation'
+import Router from './src/Routers'
+import SideMenu from './src/pages/SideMenu'
 
 
-const AppNavigator = StackNavigator(
-  {
-    ...Routers,
-    Index: {
-      screen: Routers.LoginPage.screen,
-      // screen: Routers.TransactionListView.screen,
+
+export default DrawerNavigator({
+    ...Router
     },
-  },
-  {
-    initialRouteName: 'Index',
-    headerMode: 'none',
-  }
+    {
+        contentComponent: SideMenu
+    }
 );
 
-export default () => (
-  <Provider store={store}>
-    <AppNavigator/>
-  </Provider>
-);
+
