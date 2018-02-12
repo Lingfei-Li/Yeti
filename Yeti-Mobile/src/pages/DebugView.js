@@ -1,14 +1,10 @@
-/**
- * Created by Yida Yin on 1/10/18
- */
-
 import React, {Component} from 'react';
 import {
-  View,
-  Text,
-  Clipboard,
-  TouchableOpacity,
-  StyleSheet,
+    View,
+    Text,
+    Clipboard,
+    TouchableOpacity,
+    StyleSheet, Image,
 } from 'react-native';
 import deviceLog, {LogView} from 'react-native-device-log';
 
@@ -24,7 +20,11 @@ async function copyRawLogs() {
   Clipboard.setString(rowsString);
 }
 
-export default class DebugInfo extends Component {
+export default class DebugView extends Component {
+  static navigationOptions = ({navigation}) => ({
+    header: null
+  });
+
   render() {
     return (
       <View style={{flex: 1, paddingTop: 0}}>
@@ -33,15 +33,6 @@ export default class DebugInfo extends Component {
           multiExpanded={true}
           timeStampFormat='HH:mm:ss'
         />
-
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => this.props.navigation.goBack()}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.closeButton} onPress={copyRawLogs}>
-            <Text style={styles.closeButtonText}>Copy</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     )
   }
@@ -51,7 +42,7 @@ export default class DebugInfo extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000F0'
+    // backgroundColor: '#000000F0'
   },
   buttons: {
     flexDirection: 'row',

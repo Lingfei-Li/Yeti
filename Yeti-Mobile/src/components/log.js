@@ -15,20 +15,23 @@ deviceLog.init(new InMemoryAdapter(), {
   maxNumberToPersist : 2000
 });
 
+//noinspection JSAnnotator
 export default {
-  log(...params: Array<any>) {
+  log(...params) {
     if (!logEnabled) {
       return;
     }
+    console.log(...params);
     return deviceLog.log(...params);
   },
-  info(...params: Array<any>) {
+  info(...params) {
     if (!logEnabled) {
       return;
     }
+    console.info(...params);
     return deviceLog.info(...params);
   },
-  warn(...params: Array<any>) {
+  warn(...params) {
     if (!logEnabled) {
       return;
     }

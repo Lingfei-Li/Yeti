@@ -1,5 +1,11 @@
 {
   "expo": {
-    "sdkVersion": "25.0.0"
+    "sdkVersion": "25.0.0",
+    "icon": "./src/resources/assets/yeti.png",
+    "splash": {
+      "image": "./src/resources/assets/yeti.png",
+      "backgroundColor": "#B0C1E5",
+      "resizeMode": "contain"
+    }
   }
 }

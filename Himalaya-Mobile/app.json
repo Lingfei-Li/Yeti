@@ -1,10 +1,10 @@
 {
   "expo": {
     "sdkVersion": "23.0.0",
-    "icon": "./src/resources/assets/yeti.png",
+    "icon": "./src/resources/assets/himalaya.png",
     "splash": {
-      "image": "./src/resources/assets/yeti.png",
-      "backgroundColor": "#B0C1E5",
+      "image": "./src/resources/assets/himalaya.png",
+      "backgroundColor": "#FFFFFF",
       "resizeMode": "contain"
     }
   }
