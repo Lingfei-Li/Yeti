@@ -15,12 +15,28 @@ import * as Actions from '../../actions/index'
 
 
 export default class TicketGroupedByTypeListRow extends React.Component{
+
+  getTicketDetailsButton(tickets) {
+    let details = [];
+    tickets.forEach((ticket) => {
+      details.push(
+        <TouchableOpacity
+          onPress={() => this.props.navigation.navigate('TicketDetails', {ticket}) }
+          style={styles.ticketDetailsLink}
+        >
+          <Text>{ticket.distributionStartTime} - {ticket.distributionStartTime} </Text>
+          <Text>{ticket.ticketAmount} ${ticket.ticketPrice}</Text>
+        </TouchableOpacity>
+      )
+    });
+    return details;
+  }
+
   render() {
     return (
       <View>
-        <View style={styles.ticketRow}>
-          <Text style={styles.ticketTitle}>{this.props.ticketGroup.key}</Text>
-        </View>
+        <Text style={styles.ticketTitle}>{this.props.ticketGroup.key}</Text>
+        {this.getTicketDetailsButton(this.props.ticketGroup.val)}
         <RowSeparator />
       </View>
     )
@@ -28,20 +44,15 @@ export default class TicketGroupedByTypeListRow extends React.Component{
 }
 
 
-
 const styles = StyleSheet.create({
-  ticketRow: {
-    height: 100,
-    width: '100%',
-  },
   ticketTitle: {
     fontWeight: 'bold',
     fontSize: 20,
   },
-  ticketAmount: {
-  fontSize: 18,
-},
-  ticketDistributionTime: {
+  ticketDetailsLink: {
     fontSize: 14,
+    marginTop: 15,
+    marginBottom: 15,
+    justifyContent: 'center',
   },
 }) ;

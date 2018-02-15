@@ -16,7 +16,6 @@ import * as Actions from '../../actions/index'
 
 export default class TicketGroupedByPickupTimeListRow extends React.Component{
 
-
   getTicketDetailsButton(tickets) {
     let details = [];
     tickets.forEach((ticket) => {
@@ -32,12 +31,11 @@ export default class TicketGroupedByPickupTimeListRow extends React.Component{
     return details;
   }
 
-
   render() {
     return (
       <View>
         <Text style={styles.ticketTitle}>{this.props.ticketGroup.key}</Text>
-          {this.getTicketDetailsButton(this.props.ticketGroup.val)}
+        {this.getTicketDetailsButton(this.props.ticketGroup.val)}
         <RowSeparator />
       </View>
     )
@@ -52,7 +50,8 @@ const styles = StyleSheet.create({
   },
   ticketDetailsLink: {
     fontSize: 14,
-    height: 30,
+    marginTop: 15,
+    marginBottom: 15,
     justifyContent: 'center',
   },
 }) ;

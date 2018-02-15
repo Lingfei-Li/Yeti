@@ -17,6 +17,7 @@ import * as Actions from '../actions/index'
 import { connect } from 'react-redux'
 import OptionsBar from "../components/ticket/OptionsBar";
 import log from "../components/log";
+import CommonStyles from "../styles";
 
 const { Popover } = renderers;
 
@@ -26,7 +27,7 @@ class TicketDetails extends React.Component {
     headerStyle: {
       backgroundColor: 'white'
     },
-    headerTitle: <HeaderSearchBar placeholderText="Search Ski Tickets" />,
+    headerTitle: <Text style={{fontWeight: 'bold', fontSize: 18}}>Ticket Details</Text>,
     headerLeft: (
       <View style={styles.headerItemView}>
         <TouchableOpacity
@@ -38,12 +39,12 @@ class TicketDetails extends React.Component {
       </View>
     ),
     headerRight: (
-      <View style={styles.headerItemView}>
+      <View style={CommonStyles.headerItemView}>
         <TouchableOpacity
-        style={styles.headerButton}
-        onPress={() => navigation.navigate('MyOrdersStack') }
+          style={CommonStyles.headerButton}
+          onPress={() => navigation.navigate('ShoppingCartStack') }
         >
-          <Icon name='history' size={28} color='#666' style={styles.headerRightItem}/>
+          <Icon name='shopping-cart' size={28} color='#666' style={CommonStyles.headerRightItem}/>
         </TouchableOpacity>
       </View>
     ),
@@ -59,7 +60,6 @@ class TicketDetails extends React.Component {
 
   componentDidMount() {
     this.props.navigation.setParams({
-
     });
   }
 
@@ -86,15 +86,33 @@ class TicketDetails extends React.Component {
               <TextInput
                 style={{width: 30, height: 20, borderColor: 'gray', borderWidth: 1, borderRadius: 2}}
                 keyboardType='numeric'
-                onChangeText={(purchaseAmountText) => this.setState({purchaseAmountText})}
+                onChangeText={(purchaseAmountText) => this.setState({purchaseAmountText: purchaseAmountText.replace('.', '')})}
+                maxLength={2}
                 value={this.state.purchaseAmountText}
               />
             </View>
 
             <Button
-              title='Place Order'
-              onPress={() => this.props.navigation.navigate('PaymentPage', {ticket, orderId})}
+              title='Add to cart'
+              onPress={() => {
+                const purchaseAmount = parseInt(this.state.purchaseAmountText);
+                if(purchaseAmount !== 0) {
+                  this.props.addTicketToCart(ticket, parseInt(purchaseAmount));
+                  alert("Added " + purchaseAmount + " to cart. TODO: go to confirmation page");
+                } else {
+                  this.setState({showEmptyPurchaseAmountError: true})
+                }
+              }}
             />
+
+            {(
+              () => {
+                if(this.state.showEmptyPurchaseAmountError) {
+                  return (<Text>Please select ticket quantity</Text>);
+                }
+              }
+            )()}
+
           </View>
         </ScrollView>
       </View>

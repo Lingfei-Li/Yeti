@@ -30,6 +30,7 @@
     "react-native": "0.52.0",
     "react-native-device-log": "^1.0.2",
     "react-native-navbar": "^2.1.0",
+    "react-native-numberpicker": "0.0.5",
     "react-native-popup-menu": "^0.12.2",
     "react-native-scalable-image": "^0.4.0",
     "react-navigation": "^1.0.3",

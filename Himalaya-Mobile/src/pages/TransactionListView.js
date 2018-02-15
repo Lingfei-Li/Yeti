@@ -80,22 +80,22 @@ groupTransactionsByName = (transactions) => {
 };
 
 
-@inject("store")
-@observer
-export default class TransactionListView extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      refreshing: false,
-      text: '',
-      groupBy: 'Date',
-      showStatus: 'All'
-    };
-    this.fetchTransactions();
-  }
+    @inject("store")
+    @observer
+    export default class TransactionListView extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          refreshing: false,
+          text: '',
+          groupBy: 'Date',
+          showStatus: 'All'
+        };
+        this.fetchTransactions();
+      }
 
-  fetchTransactions() {
-    const {email, token} = this.props.store;
+      fetchTransactions() {
+        const {email, token} = this.props.store;
     if (!email || !token) {
       return false;
     }

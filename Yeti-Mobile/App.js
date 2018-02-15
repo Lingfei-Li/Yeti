@@ -12,7 +12,8 @@ import reducers from './src/reducers/index'
 import TicketDetails from "./src/pages/TicketDetails";
 import Home from './src/pages/Home';
 import PaymentPage from "./src/pages/PaymentPage";
-
+import RootErrorBoundary from "expo/src/launch/RootErrorBoundary";
+import ShoppingCart from "./src/pages/ShoppingCart";
 
 
 const ticketStackNav = StackNavigator(
@@ -27,10 +28,14 @@ const ticketStackNav = StackNavigator(
       description: 'Transaction Details',
       screen: TicketDetails
     },
-    PaymentPage: {
-      name: 'PaymentPage',
-      description: 'Payment Page',
-      screen: PaymentPage
+  }
+);
+
+const shoppingCartStackNav = StackNavigator(
+  {
+    ShoppingCart: {
+      name: 'ShoppingCart',
+      screen: ShoppingCart
     },
   }
 );
@@ -75,13 +80,20 @@ const getTicketStackTabBarIcon = function(tintColor) {
 };
 
 
-const AppNavigator = DrawerNavigator({
+const mainDrawerNavigator = DrawerNavigator({
   TicketStack: {
     screen: ticketStackNav,
     navigationOptions: {
       drawerLabel:"Tickets",
       drawerIcon: ({ tintColor }) => getTicketStackTabBarIcon(tintColor)
     }
+  },
+  ShoppingCartStack: {
+    screen: shoppingCartStackNav,
+    navigationOptions: {
+      drawerLabel: "Shopping Cart",
+      drawerIcon: ({tintColor}) => <Icon name='shopping-cart' size={24} color={tintColor} />
+    },
   },
   MyOrdersStack: {
     screen: myOrdersStackNav,
@@ -111,6 +123,23 @@ const AppNavigator = DrawerNavigator({
   },
 });
 
+const RootModalStack = StackNavigator(
+  {
+    Main: {
+      screen: mainDrawerNavigator
+    },
+    PaymentPage: {
+      name: 'PaymentPage',
+      description: 'Payment Page',
+      screen: PaymentPage
+    },
+  },
+  {
+    mode: 'modal',
+    headerMode: 'none',
+  }
+);
+
 
 const styles = StyleSheet.create({
   ticketTabBarIcon: {
@@ -123,6 +152,6 @@ let store = createStore(reducers);
 
 export default () => (
   <Provider store={store}>
-    <AppNavigator/>
+    <RootModalStack />
   </Provider>
 );

@@ -1,5 +1,5 @@
 import React from 'react'
-import {Dimensions, Clipboard, Linking, StyleSheet, Button, FlatList, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity, ScrollView} from "react-native";
+import {Animated, Easing, Dimensions, Clipboard, Linking, StyleSheet, Button, FlatList, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity, ScrollView} from "react-native";
 import Image from 'react-native-scalable-image';
 import { getMockTickets } from '../mockingData/ticket'
 import SearchBar from "../components/SearchBar";
@@ -54,47 +54,154 @@ class PaymentPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      purchaseAmountText: 0
+      displayStep2View: false,
+      displayStep3View: false,
+      displayStep4View: false,
     };
   }
 
-  componentDidMount() {
-    this.props.navigation.setParams({
+  showStepX(stepX) {
+    switch(stepX) {
+      case 2:
+        this.setState({
+          displayStep2View: true
+        });
+        this._scrollView.scrollTo({x: Dimensions.get('window').width});
+        break;
+      case 3:
+        this.setState({
+          displayStep3View: true
+        });
+        this._scrollView.scrollTo({x: Dimensions.get('window').width*2});
+        // setTimeout(() => {this._scrollView.scrollTo({x: Dimensions.get('window').width*2}) }, 1000);
+        // Linking.openURL('https://venmo.com/code?user_id=1990244970790912928');
+        break;
+      case 4:
+        this.setState({
+          displayStep4View: true
+        });
+        this._scrollView.scrollTo({x: Dimensions.get('window').width*3});
+        break;
+    }
+  }
 
-    });
+  step1View(orderId) {
+    return (
+      <View style={styles.paymentStepView}>
+        <Text style={{fontWeight: 'bold', fontSize: 20}}>Pay for your order:</Text>
+        <Text style={{fontSize: 14, color: 'grey'}}>2 Snoqualmie Adult Daily $118</Text>
+        <Text style={{fontSize: 14, color: 'grey'}}>1 Stevens Adult Daily $59</Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20}}>Click to copy the Order Id</Text>
+        <Button
+          title={orderId}
+          onPress={() => { Clipboard.setString(orderId); this.showStepX(2); this._scrollView.scrollTo({x: Dimensions.get('window').width}) }}
+        />
+      </View>
+    );
+  }
+
+  step2View(ticket) {
+    if(this.state.displayStep2View) {
+      return (
+        <View style={styles.paymentStepView}>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>Pay ${ticket.ticketPrice} in Venmo</Text>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>Paste the order id in the message</Text>
+          <View style={{borderWidth: 1, borderColor: '#eee', margin: 30}}>
+            <Image
+              source={require('../resources/assets/venmo_payment_demo.gif')}
+              width={Dimensions.get('window').width * 0.6}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.openVenmoButton}
+            onPress={() => this.showStepX(3)}
+          >
+            <Text style={styles.openVenmoText}>Open </Text>
+            <Image
+              source={require('../resources/assets/venmo.png')}
+              height={30}
+            />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return null;
+  }
+
+  step3View() {
+    if(this.state.displayStep3View) {
+      return (
+        <View style={styles.paymentStepView}>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>You're all set!</Text>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>We'll send a confirmation to [this.props.userId]@amazon.com</Text>
+          <Button
+            style={{bottom: 20}}
+            title="Forgot to add Order ID?"
+            onPress={() => {this.showStepX(4)}}
+          />
+        </View>
+      )
+    }
+    return null;
+  }
+
+  step4View() {
+    if(this.state.displayStep4View) {
+      return (
+        <View style={styles.paymentStepView}>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>Comment on your payment</Text>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>Add the Order Id</Text>
+          <View style={{borderWidth: 1, borderColor: '#eee', margin: 30}}>
+            <Image
+              source={require('../resources/assets/venmo_add_comment_demo.gif')}
+              width={Dimensions.get('window').width * 0.6}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.openVenmoButton}
+            onPress={() => this.showStepX(3)}
+          >
+          <Text style={styles.openVenmoText}>Open </Text>
+          <Image
+            source={require('../resources/assets/venmo.png')}
+            height={30}
+          />
+          </TouchableOpacity>
+        </View>
+      )
+    }
+    return null;
   }
 
 
   render() {
     // Use as props
     const { params } = this.props.navigation.state;
-    const ticket = params.ticket;
 
     return (
-      <View style={styles.container}>
-        <View style={styles.step1View}>
-          <Text style={{fontWeight: 'bold', fontSize: 20}}>1. Copy the Order Id</Text>
+      <View>
+        <ScrollView
+          ref={(scrollView) => { this._scrollView = scrollView; }}
+          style={styles.paymentScrollView}
+          pagingEnabled={true}
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+        >
+
+          {this.step1View(params.orderId)}
+
+          {this.step2View(params.ticket)}
+
+          {this.step3View()}
+
+          {this.step4View()}
+        </ScrollView>
+        <View style={styles.paymentPageHeader}>
           <Button
-            title={params.orderId}
-            onPress={() => Clipboard.setString(params.orderId)}
+            title="Close"
+            onPress={() => this.props.navigation.goBack()}
           />
         </View>
-
-        <View style={styles.step2View}>
-          <Text style={{fontWeight: 'bold', fontSize: 20}}>2. Paste in the payment message</Text>
-          <View style={{borderWidth: 1, borderColor: '#eee'}}>
-            <Image
-              source={require('../resources/assets/venmo_payment_page.png')}
-              width={Dimensions.get('window').width * 0.8}
-            />
-          </View>
-          <Button
-            title="Pay via Venmo"
-            onPress={() => Linking.openURL('https://venmo.com/code?user_id=1990244970790912928')}
-          />
-        </View>
-
-
       </View>
     )
   }
@@ -119,39 +226,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
   },
-  headerItemView: {
-    flex: 1,
-    width: 70,
+  openVenmoButton: {
+    marginTop: 30,
+    flexDirection:'row',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  headerButton: {
+  openVenmoText: {
+    fontSize: '20',
+    fontWeight: 'bold',
+    color: '#00699D',
+  },
+  venmoIcon: {
+    width: 60,
+  },
+  paymentScrollView: {
     width: '100%',
-    height: '100%',
-    flex: 1,
+    height: "90%",
+    backgroundColor: 'white',
     flexDirection: 'row',
+  },
+  paymentPageHeader: {
+    width: Dimensions.get('window').width,
+    height: '10%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  paymentStepView: {
+    width: Dimensions.get('window').width,
+    height: '90%',
     justifyContent: 'center',
     alignItems: 'center',
+    // borderWidth: 1,
   },
-  headerLeftItem: {
-    width: 28,
-    height: 28,
-  },
-  headerRightItem: {
-    width: 28,
-    height: 28,
-  },
-  venmoProfileImage: {
-    width: '50%',
-    height: '50%',
-  },
-  venmoPaymentImage: {
-    height: '20%',
-  },
-  step1View: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  step2View: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
 }) ;

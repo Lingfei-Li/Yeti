@@ -10,6 +10,7 @@ import TicketListRow from './TicketListRow'
 import LogoTitle from "../LogoTitle";
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
+import {TICKET_LIST_GROUP_BY_PICKUP_TIME} from "../../reducers/index";
 
 class OptionsBar extends React.Component {
 
@@ -37,7 +38,7 @@ class OptionsBar extends React.Component {
 }
 
 function getGroupByElements(groupBy) {
-  if(groupBy === 'Pickup Time') {
+  if(groupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME) {
     return (
       <View style={{flexDirection: 'row'}}>
         <Text>
@@ -59,7 +60,6 @@ function getGroupByElements(groupBy) {
 }
 
 function mapStateToProps(state) {
-  log.info('OptionsBar state: ' + JSON.stringify(state));
   return {
     ticketListGroupBy: state.ticketListGroupBy
   }

@@ -23,19 +23,35 @@ class TicketList extends React.Component{
 
   renderTicketRow = ({item}) => {
     if(this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME) {
-      log.info("TicketList.Group by pickup time item");
       return (<TicketGroupedByPickupTimeListRow ticketGroup={item} navigation={this.props.navigation}/>);
     } else {
-      log.info("TicketList.Group by type list row");
       return (<TicketGroupedByTypeListRow ticketGroup={item} navigation={this.props.navigation}/>);
     }
   };
+
+  getTicketsWithSearchText() {
+    let tickets = JSON.parse(JSON.stringify(this.props.tickets));
+    const rawSearchText = this.props.ticketSearchText;
+    const searchTextList = rawSearchText.split(' ');
+
+    return tickets.filter((t) => {
+      const searchableValues = [t.ticketType, t.distributionStartTime, t.distributionEndTime, t.ticketAmount, t.ticketPrice];
+
+      // Use 2 reducers to pick tickets that have at least one matching property per search word
+      return searchTextList.reduce((accumulatorForTicket, searchText) => {
+        const result = searchableValues.reduce((accumulatorForValue, searchableValue) => {
+          return accumulatorForValue || searchableValue.toString().toLowerCase().includes(searchText.toLowerCase());
+        }, false);
+        return accumulatorForTicket && result;
+      }, true);
+    });
+  }
 
   render() {
     return (
       <View style={styles.ticketList}>
         <FlatList
-          data={getGroupedTickets(this.props.tickets, this.props.ticketListGroupBy)}
+          data={getGroupedTickets(this.getTicketsWithSearchText(), this.props.ticketListGroupBy)}
           renderItem={this.renderTicketRow}
           keyExtractor={this._keyExtractor}
         />
@@ -45,7 +61,6 @@ class TicketList extends React.Component{
 }
 
 function getGroupedTickets(tickets, groupBy) {
-  log.info("TicketList.getGroupedTickets");
   let groupedTickets = {};
   let groupedTicketsList = [];
   if(groupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME) {
@@ -87,7 +102,8 @@ function getGroupedTickets(tickets, groupBy) {
 
 function mapStateToProps(state) {
   return {
-    ticketListGroupBy: state.ticketListGroupBy
+    ticketListGroupBy: state.ticketListGroupBy,
+    ticketSearchText: state.ticketSearchText
   }
 }
 

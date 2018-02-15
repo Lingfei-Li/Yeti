@@ -17,6 +17,7 @@ import * as Actions from '../actions/index'
 import { connect } from 'react-redux'
 import OptionsBar from "../components/ticket/OptionsBar";
 import log from "../components/log";
+import CommonStyles from '../styles';
 
 const { Popover } = renderers;
 
@@ -25,24 +26,24 @@ class HomeScreen extends React.Component {
     headerStyle: {
       backgroundColor: 'white'
     },
-    headerTitle: <HeaderSearchBar placeholderText="Search Ski Tickets"/>,
+    headerTitle: <HeaderSearchBar placeholderText="Search Tickets e.g. Stevens Tue"/>,
     headerLeft: (
-      <View style={styles.headerItemView}>
+      <View style={CommonStyles.headerItemView}>
         <TouchableOpacity
-          style={styles.headerButton}
+          style={CommonStyles.headerButton}
           onPress={() => navigation.navigate('DrawerOpen') }
         >
-          <Icon name='bars' size={28} color='#666' style={styles.headerLeftItem}/>
+          <Icon name='bars' size={28} color='#666' style={CommonStyles.headerLeftItem}/>
         </TouchableOpacity>
       </View>
     ),
     headerRight: (
-      <View style={styles.headerItemView}>
+      <View style={CommonStyles.headerItemView}>
         <TouchableOpacity
-        style={styles.headerButton}
-        onPress={() => navigation.navigate('MyOrdersStack') }
+        style={CommonStyles.headerButton}
+        onPress={() => navigation.navigate('ShoppingCartStack') }
         >
-          <Icon name='history' size={28} color='#666' style={styles.headerRightItem}/>
+          <Icon name='shopping-cart' size={28} color='#666' style={CommonStyles.headerRightItem}/>
         </TouchableOpacity>
       </View>
     ),
@@ -52,8 +53,7 @@ class HomeScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      tickets: getMockTickets(),
-      sideMenuLeftPos: -100,
+      // Set state variables here
     };
   }
 
@@ -68,7 +68,7 @@ class HomeScreen extends React.Component {
       <View style={styles.container}>
         <OptionsBar />
 
-        <TicketList tickets={this.state.tickets} navigation={this.props.navigation}/>
+        <TicketList tickets={getMockTickets()} navigation={this.props.navigation}/>
 
       </View>
     )
@@ -121,24 +121,4 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#dddddd'
   },
-  headerItemView: {
-    flex: 1,
-    width: 70,
-  },
-  headerButton: {
-    width: '100%',
-    height: '100%',
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerLeftItem: {
-    width: 28,
-    height: 28,
-  },
-  headerRightItem: {
-    width: 28,
-    height: 28,
-  }
 }) ;
