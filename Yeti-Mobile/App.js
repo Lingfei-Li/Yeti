@@ -8,12 +8,12 @@ import {Image} from "react-native";
 import DebugView from "./src/pages/DebugView";
 import Provider from "react-redux/src/components/Provider";
 import {combineReducers, createStore} from "redux";
-import reducers from './src/reducers/index'
 import TicketDetails from "./src/pages/TicketDetails";
 import Home from './src/pages/Home';
 import PaymentPage from "./src/pages/PaymentPage";
 import RootErrorBoundary from "expo/src/launch/RootErrorBoundary";
 import ShoppingCart from "./src/pages/ShoppingCart";
+import configureStore from './src/store/configureStore';
 
 
 const ticketStackNav = StackNavigator(
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   }
 }) ;
 
-let store = createStore(reducers);
+let store = configureStore();
 
 export default () => (
   <Provider store={store}>

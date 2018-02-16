@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import RowSeparator from "./RowSeparator";
+import RowSeparator from '../RowSeparator';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import * as Actions from '../../actions/index'
@@ -19,10 +19,7 @@ class TicketListRowComponent extends React.Component{
     return (
       <View>
         <View style={styles.ticketRow}>
-          <Text style={styles.ticketTitle}>{this.props.ticket.ticketType}</Text>
-          <Text style={styles.ticketDistributionTime}>{this.props.ticket.distributionStartTime} - {this.props.ticket.distributionEndTime} </Text>
-          <Text style={styles.ticketAmount}>{this.props.ticket.ticketAmount}</Text>
-          <Text>{this.props.ticketListGroupBy}</Text>
+          <Text>Item!</Text>
         </View>
         <RowSeparator />
       </View>
@@ -33,7 +30,6 @@ class TicketListRowComponent extends React.Component{
 
 function mapStateToProps(state) {
   return {
-    ticketListGroupBy: state.ticketListGroupBy
   }
 }
 

@@ -1,7 +1,6 @@
 import React from 'react'
 import {Linking, StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity} from "react-native";
 import { getMockTickets } from '../mockingData/ticket'
-import SearchBar from "../components/SearchBar";
 import TicketList from "../components/ticket/TicketList";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import HeaderSearchBar from "../components/HeaderSearchBar";
@@ -18,37 +17,18 @@ import { connect } from 'react-redux'
 import OptionsBar from "../components/ticket/OptionsBar";
 import log from "../components/log";
 import CommonStyles from '../styles';
+import ShoppingCartButton from '../components/headerButton/ShoppingCartButton';
+import OpenDrawerButton from '../components/headerButton/OpenDrawerButton';
 
 const { Popover } = renderers;
 
 class HomeScreen extends React.Component {
   static navigationOptions = ({navigation}) => ({
-    headerStyle: {
-      backgroundColor: 'white'
-    },
-    headerTitle: <HeaderSearchBar placeholderText="Search Tickets e.g. Stevens Tue"/>,
-    headerLeft: (
-      <View style={CommonStyles.headerItemView}>
-        <TouchableOpacity
-          style={CommonStyles.headerButton}
-          onPress={() => navigation.navigate('DrawerOpen') }
-        >
-          <Icon name='bars' size={28} color='#666' style={CommonStyles.headerLeftItem}/>
-        </TouchableOpacity>
-      </View>
-    ),
-    headerRight: (
-      <View style={CommonStyles.headerItemView}>
-        <TouchableOpacity
-        style={CommonStyles.headerButton}
-        onPress={() => navigation.navigate('ShoppingCartStack') }
-        >
-          <Icon name='shopping-cart' size={28} color='#666' style={CommonStyles.headerRightItem}/>
-        </TouchableOpacity>
-      </View>
-    ),
+    headerStyle: CommonStyles.headerStyle,
+    headerTitle: <HeaderSearchBar placeholderText='Search Tickets e.g. "Stevens Tue"'/>,
+    headerLeft: <OpenDrawerButton navigation={navigation}/>,
+    headerRight: <ShoppingCartButton navigation={navigation}/>,
   });
-
 
   constructor(props) {
     super(props);

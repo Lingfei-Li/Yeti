@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Actions from '../actions/index'
 import {
+  TouchableWithoutFeedback,
   Text,
   View,
   Dimensions,
@@ -17,14 +18,22 @@ class HeaderSearchBar extends React.Component{
   render() {
     return (
       <View style={styles.searchSection}>
-        <Icon style={styles.searchIcon} name="search" size={16}/>
-        <TextInput
-          style={styles.input}
-          placeholder={this.props.placeholderText || 'Search'}
-          onChangeText={(text) => {this.props.updateTicketSearchText(text)}}
-          underlineColorAndroid="transparent"
-          clearButtonMode="unless-editing"
-        />
+        <TouchableOpacity //Expand touchable area to improve UX
+          activeOpacity={1}
+          onPress={() => {this.SearchTextInput.focus()}}
+          style={styles.touchableArea}
+        >
+          <Icon style={styles.searchIcon} name="search" size={16}/>
+          <TextInput
+            ref={(element) => this.SearchTextInput = element}
+            style={styles.input}
+            placeholder={this.props.placeholderText || 'Search'}
+            onChangeText={(text) => {this.props.updateTicketSearchText(text)}}
+            underlineColorAndroid="transparent"
+            clearButtonMode="while-editing"
+            blurOnSubmit={true}
+          />
+        </TouchableOpacity>
       </View>
     )
   }
@@ -51,13 +60,20 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 8,
   },
+  touchableArea: {
+    height: '100%',
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
   searchIcon: {
     paddingLeft: 10,
     paddingRight: 5,
     color: '#bbb',
   },
   input: {
+    flex: '1',
     width: '100%',
-    backgroundColor: 'none',
   },
 });

@@ -4,6 +4,9 @@ export default CommonStyles = StyleSheet.create({
     width: 24,
     height: 24,
   },
+  headerStyle: {
+    backgroundColor: 'white'
+  },
   headerItemView: {
     flex: 1,
     width: 70,

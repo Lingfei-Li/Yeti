@@ -2,62 +2,67 @@ import * as Actions from '../../actions/index'
 import React from 'react'
 import {StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput, TouchableOpacity} from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { getMockTickets } from '../../mockingData/ticket'
-import log from '../log';
-import SearchBar from "../SearchBar";
-import TicketList from "./TicketList";
-import TicketListRow from './TicketListRow'
-import LogoTitle from "../LogoTitle";
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
-import {TICKET_LIST_GROUP_BY_PICKUP_TIME} from "../../reducers/index";
+import {TICKET_LIST_GROUP_BY_PICKUP_TIME, TICKET_LIST_GROUP_BY_TICKET_TYPE} from "../../reducers/index";
 
 class OptionsBar extends React.Component {
 
+  getGroupByElements(groupBy) {
+    if(groupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME) {
+      return (
+        <View style={{flexDirection: 'row'}}>
+          <Text
+            style={[{marginRight: 5}, this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME ? styles.highlightedItemText : null]}
+
+          >
+            Group By {groupBy}
+          </Text>
+          <Icon name='calendar' size={14} color='#666'
+                style={[this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME ? styles.highlightedItemIcon : null]}
+          />
+        </View>
+      );
+    } else {
+      return (
+        <View style={{flexDirection: 'row'}}>
+          <Text
+            // style={[this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_TICKET_TYPE ? {fontWeight: "bold"} : {fontWeight: 'regular'}]}
+            style={[{marginRight: 5}, this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_TICKET_TYPE ? styles.highlightedItemText : null]}
+          >
+            Group By {groupBy}
+          </Text>
+          <Icon name='ticket' size={14} color='#666'
+                style={[this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_TICKET_TYPE ? styles.highlightedItemIcon : null]}
+          />
+        </View>
+      );
+    }
+  }
+
   render() {
       return (
-          <View style={styles.filterMenu}>
+          <View style={styles.optionsBar}>
             <TouchableOpacity
-              onPress={() => this.props.toggleTicketListGroupBy() }
-              style={styles.leftItem}
+              onPress={() => this.props.setTicketListGroupByPickupTime() }
+              style={styles.rightItem}
             >
-              {getGroupByElements(this.props.ticketListGroupBy)}
+              {this.getGroupByElements(TICKET_LIST_GROUP_BY_PICKUP_TIME)}
             </TouchableOpacity>
 
             <View style={styles.separator} />
 
             <TouchableOpacity
-              onPress={() => alert('Filter') }
-              style={styles.rightItem}
+              onPress={() => this.props.setTicketListGroupByTicketType() }
+              style={styles.leftItem}
             >
-              <Text>Filter</Text>
+              {this.getGroupByElements(TICKET_LIST_GROUP_BY_TICKET_TYPE)}
             </TouchableOpacity>
           </View>
       )
   }
 }
 
-function getGroupByElements(groupBy) {
-  if(groupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME) {
-    return (
-      <View style={{flexDirection: 'row'}}>
-        <Text>
-          Group By: {groupBy}
-        </Text>
-        <Icon name='calendar' size={14} color='#666'/>
-      </View>
-    );
-  } else {
-    return (
-      <View style={{flexDirection: 'row'}}>
-        <Text>
-          Group By: {groupBy}
-        </Text>
-        <Icon name='ticket' size={14} color='#666'/>
-      </View>
-    );
-  }
-}
 
 function mapStateToProps(state) {
   return {
@@ -72,7 +77,7 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(OptionsBar)
 
 const styles = StyleSheet.create({
-  filterMenu: {
+  optionsBar: {
     width: '100%',
     height: 35,
     flexDirection: 'row',
@@ -99,5 +104,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
+  highlightedItemText: {
+    fontWeight: 'bold',
+    color: '#00699D',
+  },
+  highlightedItemIcon: {
+    color: '#00699D',
+  },
 }) ;

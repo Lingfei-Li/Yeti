@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import RowSeparator from "./RowSeparator";
+import RowSeparator from "../RowSeparator";
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import * as Actions from '../../actions/index'
@@ -24,7 +24,7 @@ export default class TicketGroupedByPickupTimeListRow extends React.Component{
           onPress={() => this.props.navigation.navigate('TicketDetails', {ticket}) }
           style={styles.ticketDetailsLink}
         >
-          <Text>{ticket.ticketType} {ticket.ticketAmount} ${ticket.ticketPrice}</Text>
+          <Text style={{textAlign: 'center'}}>{ticket.ticketType} {ticket.ticketAmount} ${ticket.ticketPrice}</Text>
         </TouchableOpacity>
       )
     });
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
   ticketTitle: {
     fontWeight: 'bold',
     fontSize: 20,
+    textAlign: 'center'
   },
   ticketDetailsLink: {
     fontSize: 14,

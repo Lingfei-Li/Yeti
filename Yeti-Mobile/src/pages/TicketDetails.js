@@ -1,7 +1,6 @@
 import React from 'react'
 import {Linking, StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity, ScrollView} from "react-native";
 import { getMockTickets } from '../mockingData/ticket'
-import SearchBar from "../components/SearchBar";
 import TicketList from "../components/ticket/TicketList";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import HeaderSearchBar from "../components/HeaderSearchBar";
@@ -15,11 +14,8 @@ import {
 import {bindActionCreators} from "redux";
 import * as Actions from '../actions/index'
 import { connect } from 'react-redux'
-import OptionsBar from "../components/ticket/OptionsBar";
-import log from "../components/log";
-import CommonStyles from "../styles";
-
-const { Popover } = renderers;
+import ShoppingCartButton from '../components/headerButton/ShoppingCartButton';
+import GoBackButton from '../components/headerButton/GoBackButton';
 
 class TicketDetails extends React.Component {
   static navigationOptions = ({navigation}) => ({
@@ -28,26 +24,8 @@ class TicketDetails extends React.Component {
       backgroundColor: 'white'
     },
     headerTitle: <Text style={{fontWeight: 'bold', fontSize: 18}}>Ticket Details</Text>,
-    headerLeft: (
-      <View style={styles.headerItemView}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.goBack() }
-        >
-          <Icon name='chevron-left' size={28} color='#666' style={styles.headerLeftItem}/>
-        </TouchableOpacity>
-      </View>
-    ),
-    headerRight: (
-      <View style={CommonStyles.headerItemView}>
-        <TouchableOpacity
-          style={CommonStyles.headerButton}
-          onPress={() => navigation.navigate('ShoppingCartStack') }
-        >
-          <Icon name='shopping-cart' size={28} color='#666' style={CommonStyles.headerRightItem}/>
-        </TouchableOpacity>
-      </View>
-    ),
+    headerLeft: <GoBackButton navigation={navigation}/>,
+    headerRight: <ShoppingCartButton navigation={navigation}/>,
   });
 
 
@@ -73,6 +51,7 @@ class TicketDetails extends React.Component {
 
     return (
       <View style={styles.container}>
+
         <ScrollView style={{flex: 1, width: '100%'}}>
           <View style={{flex: 1, alignItems: 'center'}}>
             <Text style={{fontSize: 22, marginTop: 10}}>{ticket.ticketType}</Text>
@@ -98,7 +77,7 @@ class TicketDetails extends React.Component {
                 const purchaseAmount = parseInt(this.state.purchaseAmountText);
                 if(purchaseAmount !== 0) {
                   this.props.addTicketToCart(ticket, parseInt(purchaseAmount));
-                  alert("Added " + purchaseAmount + " to cart. TODO: go to confirmation page");
+                  // alert("Added " + purchaseAmount + " to cart. TODO: go to confirmation page");
                 } else {
                   this.setState({showEmptyPurchaseAmountError: true})
                 }

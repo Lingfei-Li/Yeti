@@ -3,7 +3,6 @@ import React from 'react'
 import {StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput} from "react-native";
 import { getMockTickets } from '../mockingData/ticket'
 import log from '../components/log';
-import SearchBar from "../components/SearchBar";
 import TicketList from "../components/ticket/TicketList";
 import TicketListRow from '../components/ticket/TicketListRow'
 import LogoTitle from "../components/LogoTitle";

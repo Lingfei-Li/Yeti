@@ -1,11 +1,7 @@
 import React from 'react'
 import {Animated, Easing, Dimensions, Clipboard, Linking, StyleSheet, Button, FlatList, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity, ScrollView} from "react-native";
 import Image from 'react-native-scalable-image';
-import { getMockTickets } from '../mockingData/ticket'
-import SearchBar from "../components/SearchBar";
-import TicketList from "../components/ticket/TicketList";
 import Icon from 'react-native-vector-icons/FontAwesome';
-import HeaderSearchBar from "../components/HeaderSearchBar";
 import {
   Menu,
   MenuProvider,
@@ -16,7 +12,6 @@ import {
 import {bindActionCreators} from "redux";
 import * as Actions from '../actions/index'
 import { connect } from 'react-redux'
-import OptionsBar from "../components/ticket/OptionsBar";
 import log from "../components/log";
 
 const { Popover } = renderers;
@@ -85,12 +80,26 @@ class PaymentPage extends React.Component {
     }
   }
 
-  step1View(orderId) {
+  getTotalPrice(payingOrder) {
+    return payingOrder.reduce((accumulator, singleTicketOrder) => {
+      return accumulator + parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticketPrice);
+    }, 0);
+  }
+
+  getPriceForSingleTicketOrder(singleTicketOrder) {
+    return parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticketPrice);
+  }
+
+  step1View(orderId, payingOrder) {
+    const ticketsTextElements = payingOrder.map((singleTicketOrder) => {
+        return <Text>{singleTicketOrder.ticket.ticketType} {singleTicketOrder.purchaseAmount} * {singleTicketOrder.ticket.ticketPrice} = ${this.getPriceForSingleTicketOrder(singleTicketOrder)}</Text>
+    });
+
     return (
       <View style={styles.paymentStepView}>
         <Text style={{fontWeight: 'bold', fontSize: 20}}>Pay for your order:</Text>
-        <Text style={{fontSize: 14, color: 'grey'}}>2 Snoqualmie Adult Daily $118</Text>
-        <Text style={{fontSize: 14, color: 'grey'}}>1 Stevens Adult Daily $59</Text>
+        {ticketsTextElements}
+        <Text>Total: ${this.getTotalPrice(payingOrder)}</Text>
         <Text style={{fontWeight: 'bold', fontSize: 20}}>Click to copy the Order Id</Text>
         <Button
           title={orderId}
@@ -100,11 +109,11 @@ class PaymentPage extends React.Component {
     );
   }
 
-  step2View(ticket) {
+  step2View(payingOrder) {
     if(this.state.displayStep2View) {
       return (
         <View style={styles.paymentStepView}>
-          <Text style={{fontWeight: 'bold', fontSize: 20}}>Pay ${ticket.ticketPrice} in Venmo</Text>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>Pay ${this.getTotalPrice(payingOrder)} in Venmo</Text>
           <Text style={{fontWeight: 'bold', fontSize: 20}}>Paste the order id in the message</Text>
           <View style={{borderWidth: 1, borderColor: '#eee', margin: 30}}>
             <Image
@@ -133,7 +142,7 @@ class PaymentPage extends React.Component {
       return (
         <View style={styles.paymentStepView}>
           <Text style={{fontWeight: 'bold', fontSize: 20}}>You're all set!</Text>
-          <Text style={{fontWeight: 'bold', fontSize: 20}}>We'll send a confirmation to [this.props.userId]@amazon.com</Text>
+          <Text style={{fontWeight: 'bold', fontSize: 20}}>We'll send a confirmation to {this.props.userId}@amazon.com</Text>
           <Button
             style={{bottom: 20}}
             title="Forgot to add Order ID?"
@@ -188,9 +197,9 @@ class PaymentPage extends React.Component {
           showsHorizontalScrollIndicator={false}
         >
 
-          {this.step1View(params.orderId)}
+          {this.step1View(params.orderId, params.payingOrder)}
 
-          {this.step2View(params.ticket)}
+          {this.step2View(params.payingOrder)}
 
           {this.step3View()}
 
