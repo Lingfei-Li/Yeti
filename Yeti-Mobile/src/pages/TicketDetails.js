@@ -1,9 +1,8 @@
 import React from 'react'
-import {Linking, StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity, ScrollView} from "react-native";
+import {Vibration, Linking, StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity, ScrollView} from "react-native";
 import { getMockTickets } from '../mockingData/ticket'
 import TicketList from "../components/ticket/TicketList";
 import Icon from 'react-native-vector-icons/FontAwesome';
-import HeaderSearchBar from "../components/HeaderSearchBar";
 import {
   Menu,
   MenuProvider,
@@ -16,13 +15,15 @@ import * as Actions from '../actions/index'
 import { connect } from 'react-redux'
 import ShoppingCartButton from '../components/headerButton/ShoppingCartButton';
 import GoBackButton from '../components/headerButton/GoBackButton';
+import {Dropdown} from "react-native-material-dropdown";
+import log from "../components/log";
+import CommonStyles from "../styles";
+import AddToCartConfirmationBanner from "../components/ticketDetails/AddToCartConfirmationBanner";
 
 class TicketDetails extends React.Component {
   static navigationOptions = ({navigation}) => ({
     drawerLockMode: 'locked-closed',
-    headerStyle: {
-      backgroundColor: 'white'
-    },
+    headerStyle: CommonStyles.headerStyle,
     headerTitle: <Text style={{fontWeight: 'bold', fontSize: 18}}>Ticket Details</Text>,
     headerLeft: <GoBackButton navigation={navigation}/>,
     headerRight: <ShoppingCartButton navigation={navigation}/>,
@@ -32,13 +33,16 @@ class TicketDetails extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      purchaseAmountText: 0
+      quantity: 1,
+      displayConfirmationBanner: false
     };
   }
 
-  componentDidMount() {
-    this.props.navigation.setParams({
-    });
+  confirmationBanner() {
+    if(this.state.displayConfirmationBanner) {
+      return (<AddToCartConfirmationBanner navigation={this.props.navigation} />);
+    }
+    return null;
   }
 
 
@@ -47,10 +51,18 @@ class TicketDetails extends React.Component {
     const { params } = this.props.navigation.state;
     const ticket = params.ticket;
 
-    const orderId = 'YetiOrder#12345678901234567890#';
+    const purchaseAmountOptions = [
+      {value: 1},
+      {value: 2},
+      {value: 3},
+      {value: 4},
+      {value: 5},
+    ];
 
     return (
       <View style={styles.container}>
+
+        {this.confirmationBanner()}
 
         <ScrollView style={{flex: 1, width: '100%'}}>
           <View style={{flex: 1, alignItems: 'center'}}>
@@ -60,38 +72,32 @@ class TicketDetails extends React.Component {
 
             <Text>{ticket.distributionStartTime} - {ticket.distributionEndTime} (x hours later)</Text>
 
-            <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}} >
-              <Text>Purchase Amount: </Text>
-              <TextInput
-                style={{width: 30, height: 20, borderColor: 'gray', borderWidth: 1, borderRadius: 2}}
-                keyboardType='numeric'
-                onChangeText={(purchaseAmountText) => this.setState({purchaseAmountText: purchaseAmountText.replace('.', '')})}
-                maxLength={2}
-                value={this.state.purchaseAmountText}
+            <View style={styles.quantityDropdown}>
+              <Dropdown
+                label="Qty: "
+                data={purchaseAmountOptions}
+                value={1}
+                style={styles.quantityDropdown}
+                onChangeText={(value) => {
+                  this.setState({quantity: parseInt(value)})
+                }}
               />
             </View>
 
             <Button
               title='Add to cart'
+              color='#00699D'
               onPress={() => {
-                const purchaseAmount = parseInt(this.state.purchaseAmountText);
-                if(purchaseAmount !== 0) {
-                  this.props.addTicketToCart(ticket, parseInt(purchaseAmount));
-                  // alert("Added " + purchaseAmount + " to cart. TODO: go to confirmation page");
+                const quantity = parseInt(this.state.quantity);
+                if(quantity !== 0) {
+                  this.props.addTicketToCart(ticket, parseInt(quantity));
+                  this.setState({displayConfirmationBanner: true});
+                  Vibration.vibrate();
                 } else {
-                  this.setState({showEmptyPurchaseAmountError: true})
+                  alert('Please choose a purchase quantity');
                 }
               }}
             />
-
-            {(
-              () => {
-                if(this.state.showEmptyPurchaseAmountError) {
-                  return (<Text>Please select ticket quantity</Text>);
-                }
-              }
-            )()}
-
           </View>
         </ScrollView>
       </View>
@@ -119,25 +125,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerItemView: {
-    flex: 1,
-    width: 70,
-  },
-  headerButton: {
-    width: '100%',
-    height: '100%',
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerLeftItem: {
-    width: 28,
-    height: 28,
-  },
-  headerRightItem: {
-    width: 28,
-    height: 28,
+  quantityDropdown: {
+    width: 50,
+    marginLeft: 8
   }
-
 }) ;

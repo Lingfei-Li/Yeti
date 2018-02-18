@@ -9,6 +9,13 @@ import CommonStyles from "../../styles";
 
 class ShoppingCartButton extends React.Component {
 
+  getTintColor() {
+    if(this.props.shoppingCart.length) {
+      return '#00699D';
+    }
+    return '#666';
+  }
+
   render() {
     return (
       <View style={CommonStyles.headerItemView}>
@@ -17,7 +24,7 @@ class ShoppingCartButton extends React.Component {
           onPress={() => this.props.navigation.navigate('ShoppingCartStack') }
         >
 
-        <Icon name='shopping-cart' size={28} color='#666' style={CommonStyles.headerRightItem}/>
+        <Icon name='shopping-cart' size={28} color={this.getTintColor()} style={CommonStyles.headerRightItem}/>
         <Text style={styles.cartItemsCount}>
           {this.props.shoppingCart.length === 0 ? "" : this.props.shoppingCart.length}
         </Text>

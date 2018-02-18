@@ -1,5 +1,5 @@
 import React from 'react';
-import * as Actions from '../actions/index'
+import * as Actions from '../../actions/index'
 import {
   TouchableWithoutFeedback,
   Text,

@@ -12,6 +12,10 @@ const defaultState = {
   ticketListGroupBy: TICKET_LIST_GROUP_BY_OPTIONS[0],
   ticketSearchText: "",
   shoppingCart: [],
+  user: {
+    userId: 'lingfeil',
+    fullName: 'Lingfei Li'
+  }
 };
 
 const cloneObject = function(obj) {
@@ -55,6 +59,16 @@ export default function(state=defaultState, action) {
 
       newState.shoppingCart.push(newCartItem);
       log.info(`add ${action.purchaseAmount} ${action.ticket.ticketType} to cart`);
+      return newState;
+
+    case Actions.CHANGE_TICKET_QUANTITY_IN_CART:
+      for(let i = newState.shoppingCart.length - 1; i >= 0; i --) {
+        if(newState.shoppingCart[i].ticket.ticketId === action.ticketId) {
+          newState.shoppingCart[i].purchaseAmount = action.quantity;
+        }
+      }
+
+      log.info(`changed ticketId ${action.ticketId} quantity to ${action.quantity}`);
       return newState;
 
     case Actions.DELETE_TICKET_FROM_CART:

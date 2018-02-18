@@ -6,6 +6,7 @@ export const SET_TICKET_LIST_GROUP_BY_PICKUP_TIME = 'SET_TICKET_LIST_GROUP_BY_PI
 export const SET_TICKET_LIST_GROUP_BY_TICKET_TYPE = 'SET_TICKET_LIST_GROUP_BY_TICKET_TYPE';
 export const UPDATE_TICKET_SEARCH_TEXT = 'UPDATE_TICKET_SEARCH_TEXT';
 export const ADD_TICKET_TO_CART = 'ADD_TICKET_TO_CART';
+export const CHANGE_TICKET_QUANTITY_IN_CART = 'CHANGE_TICKET_QUANTITY_IN_CART';
 export const DELETE_TICKET_FROM_CART = 'DELETE_TICKET_FROM_CART';
 
 export function toggleTicketListGroupBy() {
@@ -48,6 +49,16 @@ export function addTicketToCart(ticket, purchaseAmount) {
     type: ADD_TICKET_TO_CART,
     ticket,
     purchaseAmount,
+  };
+}
+
+export function changeTicketQuantityInCart(ticketId, quantity) {
+  log.info('Action: changeTicketQuantityInCart');
+
+  return {
+    type: CHANGE_TICKET_QUANTITY_IN_CART,
+    ticketId,
+    quantity
   };
 }
 

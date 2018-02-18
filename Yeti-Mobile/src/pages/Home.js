@@ -3,7 +3,7 @@ import {Linking, StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider,
 import { getMockTickets } from '../mockingData/ticket'
 import TicketList from "../components/ticket/TicketList";
 import Icon from 'react-native-vector-icons/FontAwesome';
-import HeaderSearchBar from "../components/HeaderSearchBar";
+import HeaderSearchBar from "../components/ticket/HeaderSearchBar";
 import {
   Menu,
   MenuProvider,

@@ -205,7 +205,7 @@ class PaymentPage extends React.Component {
 
           {this.step4View()}
         </ScrollView>
-        <View style={styles.paymentPageHeader}>
+        <View style={styles.paymentPageFooter}>
           <Button
             title="Close"
             onPress={() => this.props.navigation.goBack()}
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     flexDirection: 'row',
   },
-  paymentPageHeader: {
+  paymentPageFooter: {
     width: Dimensions.get('window').width,
     height: '10%',
     flexDirection: 'row',
