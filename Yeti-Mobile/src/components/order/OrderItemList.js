@@ -16,8 +16,7 @@ import log from "../log";
 import {TICKET_LIST_GROUP_BY_TICKET_TYPE, TICKET_LIST_GROUP_BY_PICKUP_TIME} from '../../reducers/index'
 import RowSeparator from '../RowSeparator';
 import {Dropdown} from "react-native-material-dropdown";
-import CartItemListRow from "./CartItemListRow";
-import OrderSummaryBanner from "./OrderSummaryBannerRow";
+import CartItemListRow from "./OrderItemListRow";
 
 
 class CartItemList extends React.Component{
@@ -30,8 +29,6 @@ class CartItemList extends React.Component{
   _keyExtractor = (ticket, index) => ticket.ticketId;
 
   renderTicketRow = ({item}) => {
-    log.info('row: ');
-    log.info(item.purchaseAmount);
     return (
       <CartItemListRow ticket={item.ticket} quantity={item.purchaseAmount}/>
     );
@@ -40,12 +37,12 @@ class CartItemList extends React.Component{
   render() {
     return (
       <View style={styles.cartItemList}>
-        <FlatList
-          data={this.props.shoppingCart}
-          renderItem={this.renderTicketRow}
-          keyExtractor={this._keyExtractor}
-          ListFooterComponent={(<OrderSummaryBanner navigation={this.props.navigation}/>)}
-        />
+        <Text> My Orders </Text>
+        {/*<FlatList*/}
+          {/*data={this.props.shoppingCart}*/}
+          {/*renderItem={this.renderTicketRow}*/}
+          {/*keyExtractor={this._keyExtractor}*/}
+        {/*/>*/}
       </View>
     )
   }

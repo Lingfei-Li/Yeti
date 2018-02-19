@@ -23,23 +23,8 @@ class CartItemListRow extends React.Component{
 
   state = {
     quantityText: this.props.quantity.toString(),
-    fadeAnim: new Animated.Value(this.getOpacity()),
-    deleteButtonWidth: new Animated.Value(this.getDeleteButtonWidth()),
+    fadeAnim: new Animated.Value(this.getOpacity()),  // Initial value for opacity: 1
   };
-
-  componentDidUpdate(prevProps, prevState, prevContext) {
-    // Due to list row reuse, must update the component state manually.
-    // The props have been changed, but the states wil not change automatically
-    if(prevProps.ticket.ticketId !== this.props.ticket.ticketId) {
-      if(prevProps.quantity !== this.props.quantity) {    // condition check is necessary or there'll be an infinite component update loop
-        this.setState({
-          quantityText: this.props.quantity.toString(),
-          fadeAnim: new Animated.Value(this.getOpacity()),
-          deleteButtonWidth: new Animated.Value(this.getDeleteButtonWidth()),
-        })
-      }
-    }
-  }
 
   getOpacity() {
     if(this.props.quantity !== 0) {
@@ -47,15 +32,6 @@ class CartItemListRow extends React.Component{
     }
     else {
       return 0.2;
-    }
-  }
-
-  getDeleteButtonWidth() {
-    if(this.props.quantity !== 0) {
-      return 0;
-    }
-    else {
-      return 50;
     }
   }
 
@@ -72,11 +48,9 @@ class CartItemListRow extends React.Component{
         quantityText: text
       });
       this.animateOpacity(1);
-      this.animateDeleteButtonWidth(0);
     }
      else {
       this.animateOpacity(0.2);
-      this.animateDeleteButtonWidth(50);
       this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, 0);
       this.setState({
         quantityText: '0'
@@ -92,37 +66,7 @@ class CartItemListRow extends React.Component{
         duration: 300,              // Make it take a while
       }
     ).start();                        // Starts the animation
-  }
 
-  animateDeleteButtonWidth(toValue) {
-    Animated.timing(
-      this.state.deleteButtonWidth,
-      {
-        toValue,
-        duration: 300,
-      }
-    ).start();
-  }
-
-  getDeleteButton() {
-    let icon = null;
-    if(this.props.quantity === 0) {
-      icon = (
-        <Icon name="trash" size={22} style={{color: '#eee'}}/>
-      );
-    }
-    return (
-      <Animated.View
-        style={{height: '100%', width: this.state.deleteButtonWidth, right: 0, position: 'absolute', justifyContent: 'center', alignItems: 'center'}}
-      >
-        <TouchableOpacity
-          onPress={() => this.props.deleteTicketFromCart(this.props.ticket.ticketId) }
-          style={{height: '100%', width: '100%', right: 0, backgroundColor: '#ff4444', opacity: 0.8,  position: 'absolute', justifyContent: 'center', alignItems: 'center'}}
-        >
-          {icon}
-        </TouchableOpacity>
-      </Animated.View>
-    )
   }
 
   render() {
@@ -131,11 +75,10 @@ class CartItemListRow extends React.Component{
 
     return (
       <View>
-
         <Animated.View style={{opacity: this.state.fadeAnim}}>
           <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginTop: 20}}>{ticket.ticketType}</Text>
           <Text style={{textAlign: 'center', marginTop: 10}}>{ticket.distributionStartTime} - {ticket.distributionStartTime}</Text>
-          <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 10}}>
+          <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 20}}>
             <Text style={{textAlign: 'center'}}>Qty: </Text>
             <TextInput
               style={{width: 30, height: 20, borderColor: 'gray', borderWidth: 1, borderRadius: 2}}
@@ -149,8 +92,6 @@ class CartItemListRow extends React.Component{
             <Text style={{textAlign: 'center'}}> * ${ticket.ticketPrice} = ${ticket.ticketPrice * this.props.quantity}</Text>
           </View>
         </Animated.View>
-
-        {this.getDeleteButton()}
 
         <RowSeparator/>
 

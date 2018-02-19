@@ -78,7 +78,10 @@ export default function(state=defaultState, action) {
         }
       }
 
+
       log.info(`delete ticketId ${action.ticketId} from cart`);
+      log.info('shopping cart:');
+      log.info(newState.shoppingCart);
       return newState;
 
     default:

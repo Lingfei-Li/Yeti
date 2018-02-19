@@ -81,6 +81,13 @@ const getTicketStackTabBarIcon = function(tintColor) {
 
 
 const mainDrawerNavigator = DrawerNavigator({
+  MyOrdersStack: {
+    screen: myOrdersStackNav,
+    navigationOptions: {
+      drawerLabel: "My Orders",
+      drawerIcon: ({tintColor}) => <Icon name='history' size={24} color={tintColor} />
+    },
+  },
   TicketStack: {
     screen: ticketStackNav,
     navigationOptions: {
@@ -93,13 +100,6 @@ const mainDrawerNavigator = DrawerNavigator({
     navigationOptions: {
       drawerLabel: "Shopping Cart",
       drawerIcon: ({tintColor}) => <Icon name='shopping-cart' size={24} color={tintColor} />
-    },
-  },
-  MyOrdersStack: {
-    screen: myOrdersStackNav,
-    navigationOptions: {
-      drawerLabel: "My Orders",
-      drawerIcon: ({tintColor}) => <Icon name='history' size={24} color={tintColor} />
     },
   },
   MyAccountStack: {

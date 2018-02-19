@@ -28,6 +28,21 @@ class OrderSummaryBanner extends React.Component{
     return totalPrice;
   }
 
+  getPlaceOrderButton() {
+    if(this.props.shoppingCart.length !== 0) {
+      return (
+        <View style={{marginTop: 20}}>
+          <Button
+            title="Place Order"
+            color="#00699D"
+            onPress={() => {this.props.navigation.navigate('PaymentPage', {orderId: '12345678901234567890', payingOrder: this.props.shoppingCart})}}
+          />
+        </View>
+      )
+    }
+    return null;
+  }
+
   render() {
 
     // TODO: handle empty shopping cart
@@ -39,13 +54,8 @@ class OrderSummaryBanner extends React.Component{
         <Text>{this.props.shoppingCart.length} tickets</Text>
         <Text>Total Price: ${this.getTotalPrice()}</Text>
 
-        <View style={{marginTop: 20}}>
-          <Button
-            title="Place Order"
-            color="#00699D"
-            onPress={() => {this.props.navigation.navigate('PaymentPage', {orderId: '12345678901234567890', payingOrder: this.props.shoppingCart})}}
-          />
-        </View>
+        {this.getPlaceOrderButton()}
+
       </View>
     )
   }
