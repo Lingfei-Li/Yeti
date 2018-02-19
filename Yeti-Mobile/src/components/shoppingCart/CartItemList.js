@@ -36,7 +36,6 @@ class CartItemList extends React.Component{
   };
 
   render() {
-    log.info(this.props);
     return (
       <View style={styles.cartItemList}>
         <FlatList

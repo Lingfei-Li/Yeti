@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Animated,
   Text,
   View,
   Dimensions,
@@ -20,21 +21,52 @@ import {Dropdown} from "react-native-material-dropdown";
 
 class CartItemListRow extends React.Component{
 
-  getQuantityTextInputValue() {
-    if(this.props.quantity) {
-      return this.props.quantity.toString();
-    } else {
-      return "";
+  state = {
+    quantityText: this.props.quantity.toString(),
+    fadeAnim: new Animated.Value(this.getOpacity()),  // Initial value for opacity: 1
+  };
+
+  getOpacity() {
+    if(this.props.quantity !== 0) {
+      return 1;
+    }
+    else {
+      return 0.2;
     }
   }
 
   handleTextInputChange(quantityText) {
     quantityText = quantityText.replace('.', '');
-    let quantity = 0;
-    if(quantityText.length) {
-      quantity = parseInt(quantityText);
+    this.setState({quantityText: quantityText})
+  }
+
+  handleTextInputBlur(e) {
+    const text = e.nativeEvent.text;
+    if(text && text.length > 0 && text.trim() !== '0') {
+      this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, parseInt(text));
+      this.setState({
+        quantityText: text
+      });
+      this.animateOpacity(1);
     }
-    this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, quantity);
+     else {
+      this.animateOpacity(0.2);
+      this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, 0);
+      this.setState({
+        quantityText: '0'
+      })
+    }
+  }
+
+  animateOpacity(toValue) {
+    Animated.timing(                  // Animate over time
+      this.state.fadeAnim,            // The animated value to drive
+      {
+        toValue,
+        duration: 300,              // Make it take a while
+      }
+    ).start();                        // Starts the animation
+
   }
 
   render() {
@@ -43,20 +75,23 @@ class CartItemListRow extends React.Component{
 
     return (
       <View>
-        <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginTop: 20}}>{ticket.ticketType}</Text>
-        <Text style={{textAlign: 'center', marginTop: 10}}>{ticket.distributionStartTime} - {ticket.distributionStartTime}</Text>
-        <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 20}}>
-          <Text style={{textAlign: 'center'}}>Qty: </Text>
-          <TextInput
-            style={{width: 30, height: 20, borderColor: 'gray', borderWidth: 1, borderRadius: 2}}
-            keyboardType='numeric'
-            onChangeText={(quantityText) => this.handleTextInputChange(quantityText)}
-            maxLength={2}
-            value={this.getQuantityTextInputValue()}
-            textAlign={'center'}
-          />
-          <Text style={{textAlign: 'center'}}> * ${ticket.ticketPrice} = ${ticket.ticketPrice * this.props.quantity}</Text>
-        </View>
+        <Animated.View style={{opacity: this.state.fadeAnim}}>
+          <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginTop: 20}}>{ticket.ticketType}</Text>
+          <Text style={{textAlign: 'center', marginTop: 10}}>{ticket.distributionStartTime} - {ticket.distributionStartTime}</Text>
+          <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 20}}>
+            <Text style={{textAlign: 'center'}}>Qty: </Text>
+            <TextInput
+              style={{width: 30, height: 20, borderColor: 'gray', borderWidth: 1, borderRadius: 2}}
+              keyboardType='numeric'
+              onChangeText={(text) => this.handleTextInputChange(text)}
+              onEndEditing={(e) => this.handleTextInputBlur(e)}
+              maxLength={2}
+              textAlign={'center'}
+              value={this.state.quantityText}
+            />
+            <Text style={{textAlign: 'center'}}> * ${ticket.ticketPrice} = ${ticket.ticketPrice * this.props.quantity}</Text>
+          </View>
+        </Animated.View>
 
         <RowSeparator/>
 

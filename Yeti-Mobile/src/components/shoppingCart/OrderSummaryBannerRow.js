@@ -30,6 +30,8 @@ class OrderSummaryBanner extends React.Component{
 
   render() {
 
+    // TODO: handle empty shopping cart
+
     return (
       <View style={styles.summaryRow}>
 
