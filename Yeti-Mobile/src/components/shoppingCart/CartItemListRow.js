@@ -111,6 +111,9 @@ class CartItemListRow extends React.Component{
         <Icon name="trash" size={22} style={{color: '#eee'}}/>
       );
     }
+
+    // Always return a component even if it's empty.
+    // If return a null when deletion is not allowed, the button will be covered beneath the other components and become invisible
     return (
       <Animated.View
         style={{height: '100%', width: this.state.deleteButtonWidth, right: 0, position: 'absolute', justifyContent: 'center', alignItems: 'center'}}

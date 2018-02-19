@@ -1,4 +1,6 @@
 import React from 'react';
+import QRCode from 'react-native-qrcode'
+import Moment from 'moment';
 import {
   Animated,
   Text,
@@ -19,79 +21,81 @@ import RowSeparator from '../RowSeparator';
 import {Dropdown} from "react-native-material-dropdown";
 
 
-class CartItemListRow extends React.Component{
+class OrderItemListRow extends React.Component{
 
   state = {
-    quantityText: this.props.quantity.toString(),
-    fadeAnim: new Animated.Value(this.getOpacity()),  // Initial value for opacity: 1
   };
 
-  getOpacity() {
-    if(this.props.quantity !== 0) {
-      return 1;
-    }
-    else {
-      return 0.2;
-    }
+  componentDidMount() {
+    log.info('orderitemlistrow props', this.props);
   }
 
-  handleTextInputChange(quantityText) {
-    quantityText = quantityText.replace('.', '');
-    this.setState({quantityText: quantityText})
+  parseOrderPlacedTime(orderPlacedTime) {
+    return Moment(orderPlacedTime).format('M-D ddd YYYY');
   }
 
-  handleTextInputBlur(e) {
-    const text = e.nativeEvent.text;
-    if(text && text.length > 0 && text.trim() !== '0') {
-      this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, parseInt(text));
-      this.setState({
-        quantityText: text
-      });
-      this.animateOpacity(1);
-    }
-     else {
-      this.animateOpacity(0.2);
-      this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, 0);
-      this.setState({
-        quantityText: '0'
-      })
-    }
+  getTotalTicketsInOrder(order) {
+    return order.orderItems.reduce((accumulator, orderItem) => {
+      return accumulator + orderItem.purchaseAmount;
+    }, 0);
   }
 
-  animateOpacity(toValue) {
-    Animated.timing(                  // Animate over time
-      this.state.fadeAnim,            // The animated value to drive
-      {
-        toValue,
-        duration: 300,              // Make it take a while
-      }
-    ).start();                        // Starts the animation
+  getPaymentStatusString(statusCode) {
+    // TODO: The below mapping is not official
+    const status = {
+      0: 'Not paid',
+      1: 'Paid',
+      2: 'Partially Paid',
+      3: 'Overly Paid',
+      4: 'Refund requested',
+      5: 'Refund completed',
+      6: 'Refund rejected',
+    };
+    return status[statusCode];
+  }
 
+  getPickupStatusString(statusCode) {
+    // TODO: The below mapping is not official
+    const status = {
+      0: 'Not picked up',
+      1: 'Picked up',
+    };
+    return status[statusCode];
+  }
+
+  getQrCodeValue(orderId, ticketId) {
+    return `${orderId}/${ticketId}`;
+  }
+
+  getTicketList(order) {
+    return order.orderItems.map((orderItem) => {
+      return (
+        <View style={styles.ticketContainer}>
+          <Text style={styles.ticketAttributeText}>{orderItem.ticket.ticketType}</Text>
+          <Text style={styles.ticketAttributeText}>{orderItem.ticket.distributionStartTime} - {orderItem.ticket.distributionEndTime} (x hours later)</Text>
+          <Text style={styles.ticketAttributeText}>{this.getPickupStatusString(orderItem.pickupStatus)}</Text>
+          <View style={styles.qrCodeView}>
+            <QRCode
+              value={this.getQrCodeValue(order.orderId, orderItem.ticketId)}
+              size={100}
+              bgColor='#00699D'
+              fgColor='white'/>
+          </View>
+        </View>
+      );
+    });
   }
 
   render() {
 
-    const ticket = this.props.ticket;
+    const order = this.props.order;
 
     return (
       <View>
-        <Animated.View style={{opacity: this.state.fadeAnim}}>
-          <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginTop: 20}}>{ticket.ticketType}</Text>
-          <Text style={{textAlign: 'center', marginTop: 10}}>{ticket.distributionStartTime} - {ticket.distributionStartTime}</Text>
-          <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 20}}>
-            <Text style={{textAlign: 'center'}}>Qty: </Text>
-            <TextInput
-              style={{width: 30, height: 20, borderColor: 'gray', borderWidth: 1, borderRadius: 2}}
-              keyboardType='numeric'
-              onChangeText={(text) => this.handleTextInputChange(text)}
-              onEndEditing={(e) => this.handleTextInputBlur(e)}
-              maxLength={2}
-              textAlign={'center'}
-              value={this.state.quantityText}
-            />
-            <Text style={{textAlign: 'center'}}> * ${ticket.ticketPrice} = ${ticket.ticketPrice * this.props.quantity}</Text>
-          </View>
-        </Animated.View>
+        <Text style={{textAlign: 'left', fontSize: 18, marginTop: 20, marginLeft: 20}}>Order placed: {this.parseOrderPlacedTime(order.orderPlacedTime)}</Text>
+        <Text style={{textAlign: 'left', fontSize: 18, marginTop: 20, marginLeft: 20}}>Payment Status: {this.getPaymentStatusString(order.orderPaymentStatus)}</Text>
+
+        {this.getTicketList(order)}
 
         <RowSeparator/>
 
@@ -105,12 +109,21 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(Actions, dispatch);
 }
 
-export default connect(null, mapDispatchToProps)(CartItemListRow)
+export default connect(null, mapDispatchToProps)(OrderItemListRow)
 
 
 const styles = StyleSheet.create({
-  quantityDropdown: {
-    width: 50,
-    marginLeft: 8
+  ticketContainer: {
+    borderColor: '#eee',
+    borderWidth: 1,
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 10,
+    padding: 10,
+  },
+  ticketAttributeText: {
+    marginTop: 10,
+    marginBottom: 10,
   }
 }) ;

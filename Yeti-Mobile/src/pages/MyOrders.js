@@ -6,6 +6,7 @@ import HeaderSearchBar from "../components/order/HeaderSearchBar";
 import OpenDrawerButton from "../components/headerButton/OpenDrawerButton";
 import TicketListButton from "../components/headerButton/TicketListButton";
 import OrderItemList from "../components/order/OrderItemList";
+import { getMockOrders } from '../mockingData/orders'
 
 
 
@@ -20,7 +21,7 @@ export default class MyOrders extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <OrderItemList navigation={this.props.navigation}/>
+        <OrderItemList orders={getMockOrders()} navigation={this.props.navigation}/>
       </View>
     )
   }
