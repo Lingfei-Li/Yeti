@@ -16,7 +16,7 @@ class OptionsBar extends React.Component {
             style={[{marginRight: 5}, this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME ? styles.highlightedItemText : null]}
 
           >
-            Group By {groupBy}
+            By {groupBy}
           </Text>
           <Icon name='calendar' size={14} color='#666'
                 style={[this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME ? styles.highlightedItemIcon : null]}
@@ -30,7 +30,7 @@ class OptionsBar extends React.Component {
             // style={[this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_TICKET_TYPE ? {fontWeight: "bold"} : {fontWeight: 'regular'}]}
             style={[{marginRight: 5}, this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_TICKET_TYPE ? styles.highlightedItemText : null]}
           >
-            Group By {groupBy}
+            By {groupBy}
           </Text>
           <Icon name='ticket' size={14} color='#666'
                 style={[this.props.ticketListGroupBy === TICKET_LIST_GROUP_BY_TICKET_TYPE ? styles.highlightedItemIcon : null]}

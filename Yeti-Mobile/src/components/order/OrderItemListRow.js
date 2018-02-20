@@ -26,10 +26,6 @@ class OrderItemListRow extends React.Component{
   state = {
   };
 
-  componentDidMount() {
-    log.info('orderitemlistrow props', this.props);
-  }
-
   parseOrderPlacedTime(orderPlacedTime) {
     return Moment(orderPlacedTime).format('M-D ddd YYYY');
   }

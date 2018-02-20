@@ -22,16 +22,9 @@ import OrderSummaryBanner from "./OrderSummaryBannerRow";
 
 class CartItemList extends React.Component{
 
-  constructor(props) {
-    super(props);
-    // log.info(props)
-  }
-
   _keyExtractor = (ticket, index) => ticket.ticketId;
 
   renderTicketRow = ({item}) => {
-    log.info('row: ');
-    log.info(item.purchaseAmount);
     return (
       <CartItemListRow ticket={item.ticket} quantity={item.purchaseAmount}/>
     );
