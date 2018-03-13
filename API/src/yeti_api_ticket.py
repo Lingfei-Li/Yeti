@@ -27,8 +27,6 @@ def create_ticket(event, context):
             distribution_location=body['distribution_location'],
             distribution_start_datetime=body['distribution_start_datetime'],
             distribution_end_datetime=body['distribution_end_datetime'],
-            walk_in_start_datetime=body['walk_in_start_datetime'],
-            walk_in_end_datetime=body['walk_in_end_datetime']
         )
 
         logger.info("Ticket to create: {}".format(ticket.to_json()))
@@ -56,4 +54,21 @@ def create_ticket(event, context):
         logger.error(traceback.format_exc())
         return yeti_api_response.internal_error(str(e))
 
+
+# Lambda handler for get all tickets
+def get_all_tickets(event, context):
+    logger.info("Received a get all tickets request: {}".format(event))
+    try:
+        # TODO: Auth
+
+        tickets = aws_client_dynamodb.TicketServiceTicketTable.get_all_tickets()
+
+        return yeti_api_response.ok(tickets)
+
+    except yeti_exceptions.YetiApiClientErrorException as e:
+        return yeti_api_response.client_error(str(e))
+
+    except (yeti_exceptions.YetiApiInternalErrorException, Exception) as e:
+        logger.error(traceback.format_exc())
+        return yeti_api_response.internal_error(str(e))
 

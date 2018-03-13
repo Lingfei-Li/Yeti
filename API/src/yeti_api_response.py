@@ -1,4 +1,5 @@
 import json
+import yeti_utils_common
 
 CORS_HEADERS = {
     "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
@@ -8,7 +9,8 @@ CORS_HEADERS = {
 
 
 def ok(data, headers=None):
-    return response(200, json.dumps(data), headers)
+    data_json = json.dumps(yeti_utils_common.replace_decimals(data))
+    return response(200, data_json, headers)
 
 
 def ok_no_data(message="success", headers=None):
@@ -36,8 +38,9 @@ def internal_error(error_msg, headers=None):
 
 
 def response(status_code, data, headers=None):
+    data_json = json.dumps(yeti_utils_common.replace_decimals(data))
     return {
         'statusCode': status_code,
         'headers': CORS_HEADERS if headers is None else headers,
-        'body': json.dumps(data)
+        'body': data_json
     }

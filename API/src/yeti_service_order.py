@@ -14,19 +14,21 @@ ORDER_ID_MESSAGE_TEMPLATE = 'YetiOrder#{}#'
 ORDER_ID_MESSAGE_REGEX_PATTERN = 'YetiOrder#([0-9]{20})#'
 
 
-def create_order(ticket_id, purchase_amount, buyer_id):
+def create_order(ticket_list, buyer_id):
+    # Validate order
+    for ticket in ticket_list:
+        ticket_id = ticket['ticket_id']
+        purchase_amount = ticket['purchase_amount']
+        total_ticket_amount = aws_client_dynamodb.OrderServiceTicketLocalView.get_total_ticket_amount(ticket_id)
 
-    ticket = aws_client_dynamodb.OrderServiceTicketLocalView.get_latest_ticket_item(ticket_id)
+        reserved_amount = get_reservation_amount(ticket_id)
 
-    reserved_amount = get_reservation_amount(ticket_id)
+        if purchase_amount + reserved_amount > total_ticket_amount:
+            raise yeti_exceptions.YetiApiClientErrorException("Not enough tickets (id={}) available. Purchasing {}, {} reserved, {} total"
+                                                              .format(ticket_id, purchase_amount, reserved_amount, total_ticket_amount))
 
-    if purchase_amount + reserved_amount > ticket.ticket_amount:
-        raise yeti_exceptions.YetiApiClientErrorException("Not enough tickets available")
-
-    order = yeti_models.Order.build(ticket_id=ticket_id,
-                                    ticket_version=ticket.ticket_version,
+    order = yeti_models.Order.build(ticket_list=ticket_list,
                                     buyer_id=buyer_id,
-                                    purchase_amount=purchase_amount,
                                     order_datetime=datetime.datetime.now().isoformat(),
                                     expiry_datetime=datetime.datetime.now() + datetime.timedelta(minutes=10)
                                     )

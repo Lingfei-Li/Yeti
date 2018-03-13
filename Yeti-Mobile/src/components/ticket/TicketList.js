@@ -5,7 +5,7 @@ import {
   Dimensions,
   TouchableOpacity,
   StyleSheet, FlatList,
-  Platform
+  Platform, RefreshControl
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import TicketListRow from "./TicketListRow";
@@ -16,13 +16,32 @@ import log from "../log";
 import TicketGroupedByPickupTimeListRow from "./TicketGroupedByPickupTimeListRow";
 import TicketGroupedByTypeListRow from "./TicketGroupedByTypeListRow";
 import {TICKET_LIST_GROUP_BY_TICKET_TYPE, TICKET_LIST_GROUP_BY_PICKUP_TIME} from '../../reducers/index'
+import {getAllTickets} from "../../client/ticket";
 
 
 class TicketList extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      refreshingTickets: false
+    }
+  }
+
+  refreshTickets() {
+    this.setState({refreshingTickets: true});
+    getAllTickets().then((response) => {
+      const ticketList = JSON.parse(response.data);
+      this.props.setOrRefreshTicketList(ticketList);
+      this.setState({refreshingTickets: false});
+    }).catch((error) => {
+        this.setState({refreshingTickets: false});
+    });
+  }
+
   _keyExtractor = (ticket, index) => ticket.ticketId;
 
   renderTicketRow = ({item}) => {
-    console.log('rendering ticket row...item: ' + JSON.stringify(item));
     if(item.noResult === true) {
       return (<Text style={styles.noResultBanner}>No Result</Text>);
     }
@@ -38,7 +57,6 @@ class TicketList extends React.Component{
     const rawSearchText = this.props.ticketSearchText;
     const searchTextList = rawSearchText.split(' ');
 
-    log.info(`tickets: ${JSON.stringify(tickets)}`);
     return tickets.filter((t) => {
       const searchableValues = [t.ticket_type, t.distribution_start_datetime, t.distribution_end_datetime, t.distribution_location, t.ticket_amount, t.ticket_price];
 
@@ -96,14 +114,20 @@ class TicketList extends React.Component{
         });
       }
     }
-  return groupedTicketsList;
-}
+    return groupedTicketsList;
+  }
 
 
   render() {
     return (
       <View style={styles.ticketList}>
         <FlatList
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.refreshingTickets}
+              onRefresh={this.refreshTickets.bind(this)}
+            />
+          }
           data={this.getGroupedTickets(this.getTicketsWithSearchText(), this.props.ticketListGroupBy)}
           renderItem={this.renderTicketRow}
           keyExtractor={this._keyExtractor}
@@ -127,18 +151,6 @@ function mapDispatchToProps(dispatch) {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(TicketList)
-
-const isIphoneX = () => {
-  let d = Dimensions.get('window');
-  const { height, width } = d;
-  return (
-    // This has to be iOS duh
-    Platform.OS === 'ios' &&
-
-    // Accounting for the height in either orientation
-    (height === 812 || width === 812)
-  );
-};
 
 const styles = StyleSheet.create({
   ticketList: {

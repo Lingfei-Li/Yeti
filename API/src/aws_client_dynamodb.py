@@ -126,6 +126,16 @@ class TicketServiceTicketTable:
         return item
 
     @classmethod
+    def get_all_tickets(cls):
+        ticket_table = dynamodb.Table(cls.table_name)
+
+        response = ticket_table.scan()
+
+        if 'Items' in response and response['Items']:
+            return response['Items']
+        return []
+
+    @classmethod
     def is_exist(cls, ticket):
         return DynamoDBTable.is_exist(table_name=cls.table_name, key={'ticket_id': ticket.ticket_id,
                                                                       'ticket_version': ticket.ticket_version})
@@ -227,6 +237,11 @@ class OrderServicePaymentLocalView(PaymentServicePaymentTable):
 
 class OrderServiceTicketLocalView(TicketServiceTicketTable):
     table_name = 'Yeti-OrderService-TicketLocalView'
+
+    @classmethod
+    def get_total_ticket_amount(cls, ticket_id):
+        ticket = OrderServiceTicketLocalView.get_latest_ticket_item(ticket_id)
+        return ticket.ticket_amount
 
     @classmethod
     def get_latest_ticket_item(cls, ticket_id):

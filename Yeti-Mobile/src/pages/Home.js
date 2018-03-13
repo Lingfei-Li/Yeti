@@ -42,7 +42,7 @@ class HomeScreen extends React.Component {
       const ticketList = JSON.parse(response.data);
       this.props.setOrRefreshTicketList(ticketList);
     }).catch((error) => {
-      alert("Failed to get tickets. Please retry or check your internet connection");
+      alert("Failed to get tickets. Please retry or check your internet connection. Error: " + JSON.stringify(error));
     });
   }
 

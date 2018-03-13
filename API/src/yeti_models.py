@@ -206,14 +206,12 @@ class Ticket(YetiModel):
     distribution_location = None
     distribution_start_datetime = None
     distribution_end_datetime = None
-    walk_in_start_datetime = None
-    walk_in_end_datetime = None
     change_set = None
     status_code = None
 
     @classmethod
-    def build(cls, ticket_amount, ticket_type, distributor_id, distribution_location, distribution_start_datetime, distribution_end_datetime, walk_in_start_datetime,
-              walk_in_end_datetime, ticket_id=None, ticket_version=None, change_set=None, status_code=None):
+    def build(cls, ticket_amount, ticket_type, distributor_id, distribution_location, distribution_start_datetime, distribution_end_datetime,
+              ticket_id=None, ticket_version=None, change_set=None, status_code=None):
         obj = cls()
         obj.ticket_amount = Decimal(ticket_amount)
         obj.ticket_type = ticket_type
@@ -221,8 +219,6 @@ class Ticket(YetiModel):
         obj.distribution_location = distribution_location
         obj.distribution_start_datetime = distribution_start_datetime
         obj.distribution_end_datetime = distribution_end_datetime
-        obj.walk_in_start_datetime = walk_in_start_datetime
-        obj.walk_in_end_datetime = walk_in_end_datetime
         obj.change_set = change_set
         obj.status_code = TicketStatusCode.created if status_code is None else Decimal(status_code)
 
@@ -242,8 +238,6 @@ class Ticket(YetiModel):
                                 distribution_location=message['distribution_location'],
                                 distribution_start_datetime=dateutil.parser.parse(message['distribution_start_datetime']),
                                 distribution_end_datetime=dateutil.parser.parse(message['distribution_end_datetime']),
-                                walk_in_start_datetime=dateutil.parser.parse(message['walk_in_start_datetime']),
-                                walk_in_end_datetime=dateutil.parser.parse(message['walk_in_end_datetime']),
                                 change_set=ChangeSet.from_sns_message(message['change_set']),
                                 status_code=Decimal(str(message['status_code']))
                                 )
@@ -262,10 +256,8 @@ class TicketStatusCode:
 class Order(YetiModel):
     order_id = None
     order_version = None
-    ticket_id = None
-    ticket_version = None
+    ticket_list = None
     buyer_id = None
-    purchase_amount = None
     order_datetime = None
     expiry_datetime = None
     payment_id_list = None
@@ -273,12 +265,10 @@ class Order(YetiModel):
     status_code = None
 
     @classmethod
-    def build(cls, ticket_id, ticket_version, buyer_id, purchase_amount, order_datetime, expiry_datetime, order_id=None, order_version=None, payment_id_list=None, change_set=None, status_code=None):
+    def build(cls, ticket_list, buyer_id, order_datetime, expiry_datetime, order_id=None, order_version=None, payment_id_list=None, change_set=None, status_code=None):
         obj = cls()
-        obj.ticket_id = ticket_id
-        obj.ticket_version = ticket_version
+        obj.ticket_list = ticket_list
         obj.buyer_id = buyer_id
-        obj.purchase_amount = purchase_amount
         obj.order_datetime = order_datetime
         obj.expiry_datetime = expiry_datetime
         obj.payment_id_list = [] if payment_id_list is None else payment_id_list

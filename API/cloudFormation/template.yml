@@ -253,6 +253,24 @@ Resources:
       Policies:
         - AmazonDynamoDBFullAccess
         - AmazonSNSFullAccess
+  YetiTicketServiceGetAllTickets:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-TicketService-GetAllTickets
+      Handler: yeti_api_ticket.get_all_tickets
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        CreateOrder:
+          Type: Api
+          Properties:
+            Path: /ticket
+            Method: get
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonSNSFullAccess
 
   ##### DynamoDB #####
   YetiTicketServiceTicketTable:

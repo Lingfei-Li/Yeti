@@ -55,13 +55,12 @@ def create_order(event, context):
 
         body = yeti_utils_lambda_handler.get_body(event)
 
-        ticket_id = body['ticket_id']
-        purchase_amount = body['purchase_amount']
+        ticket_list = body['ticket_list']
         buyer_id = body['buyer_id']
 
-        logger.info("Received an order: ticket id: {}, buying amount: {}, buyer_id: {}".format(ticket_id, purchase_amount, buyer_id))
+        logger.info("Received an order: ticket list: {}, buyer_id: {}".format(ticket_list, buyer_id))
 
-        yeti_service_order.create_order(ticket_id, purchase_amount, buyer_id)
+        yeti_service_order.create_order(ticket_list, buyer_id)
 
         return yeti_api_response.ok_no_data()
 
