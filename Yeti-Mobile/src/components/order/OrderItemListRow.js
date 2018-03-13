@@ -63,8 +63,8 @@ class OrderItemListRow extends React.Component{
     return `${orderId}/${ticketId}`;
   }
 
-  getDynamicTicketContainerStyle(orderItem) {
-    if(moment(orderItem.ticket.distribution_start_datetime).isSame(moment(), 'day')) {
+  getDynamicTicketContainerStyle(ticket) {
+    if(moment(ticket.distribution_start_datetime).isSame(moment(), 'day')) {
       return {
         borderColor: '#00699D',
         shadowColor: '#eee',
@@ -81,15 +81,15 @@ class OrderItemListRow extends React.Component{
   }
 
   getTicketList(order) {
-    return order.orderItems.map((orderItem) => {
+    return order.ticket_list.map((ticket) => {
       return (
-        <View style={[styles.ticketContainer, this.getDynamicTicketContainerStyle(orderItem)]}>
-          <Text style={styles.ticketAttributeText}>{orderItem.ticket.ticket_type}</Text>
-          <Text style={styles.ticketAttributeText}>{orderItem.ticket.distribution_start_datetime} - {orderItem.ticket.distribution_end_datetime} (x hours later)</Text>
-          <Text style={styles.ticketAttributeText}>{this.getPickupStatusString(orderItem.pickupStatus)}</Text>
+        <View style={[styles.ticketContainer, this.getDynamicTicketContainerStyle(ticket)]}>
+          <Text style={styles.ticketAttributeText}>{ticket.ticket_type}</Text>
+          <Text style={styles.ticketAttributeText}>{ticket.distribution_start_datetime} - {ticket.distribution_end_datetime} (x hours later)</Text>
+          <Text style={styles.ticketAttributeText}>{this.getPickupStatusString(ticket.pickupStatus)}</Text>
           <View style={styles.qrCodeView}>
             <QRCode
-              value={this.getQrCodeValue(order.orderId, orderItem.ticketId)}
+              value={this.getQrCodeValue(order.orderId, ticket.ticketId)}
               size={100}
               bgColor='#00699D'
               fgColor='white'/>

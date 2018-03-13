@@ -42,6 +42,10 @@ class YetiApiBadEventBodyException(YetiApiClientErrorException):
     """ Raised if the Lambda handler cannot parse the received event """
 
 
+class YetiApiBadEventHeadersException(YetiApiClientErrorException):
+    """ Raised if the Lambda handler cannot parse the received event """
+
+
 class YetiPaymentAlreadyAppliedException(YetiApiClientErrorException):
     """ Raised if the payment is already applied to an order but is tried to apply to another """
 

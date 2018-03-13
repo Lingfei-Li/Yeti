@@ -177,6 +177,23 @@ Resources:
               Ref: ProjectYetiApi
       Policies:
         - AmazonDynamoDBFullAccess
+  YetiOrderServiceGetAllOrdersForUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-OrderService-GetAllOrdersForUser
+      Handler: yeti_api_order.get_all_orders_for_user
+      Timeout: 10
+      Runtime: python3.6
+      Events:
+        CreateOrder:
+          Type: Api
+          Properties:
+            Path: /order
+            Method: get
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
 
   ##### DynamoDB #####
   YetiOrderServiceOrderTable:

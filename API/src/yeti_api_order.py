@@ -46,6 +46,27 @@ def handle_ticket_notification(event, context):
         logger.info("The request body doesn't match ticket notification message schema. Error: {}".format(e))
 
 
+def get_all_orders_for_user(event, context):
+    # TODO: testing
+    logger.info("Received a create order request: {}".format(event))
+
+    try:
+        # TODO: Auth
+        headers = yeti_utils_lambda_handler.get_headers(event)
+        user_id = headers['user_id']
+
+        orders = yeti_service_order.get_orders_for_user_id(user_id)
+
+        return yeti_api_response.ok(orders)
+
+    except (yeti_exceptions.YetiApiClientErrorException, yeti_exceptions.DatabaseItemNotFoundError) as e:
+        return yeti_api_response.client_error(str(e))
+
+    except (yeti_exceptions.YetiApiInternalErrorException, Exception) as e:
+        logger.error(traceback.format_exc())
+        return yeti_api_response.internal_error(str(e))
+
+
 def create_order(event, context):
     # TODO: testing
     logger.info("Received a create order request: {}".format(event))

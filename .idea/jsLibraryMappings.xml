@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaScriptLibraryMappings">
+    <file url="file://$PROJECT_DIR$/Himalaya-Mobile" libraries="{Yeti/Himalaya-Mobile/node_modules}" />
+    <file url="file://$PROJECT_DIR$/Yeti-Mobile" libraries="{Yeti/Yeti-Mobile/node_modules}" />
+    <file url="PROJECT" libraries="{Yeti/Himalaya-Mobile/node_modules, Yeti/Yeti-Mobile/node_modules, react-DefinitelyTyped, react-native-DefinitelyTyped}" />
+    <includedPredefinedLibrary name="Node.js Core" />
+  </component>
+</project>

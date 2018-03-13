@@ -35,7 +35,8 @@ class TicketList extends React.Component{
       this.props.setOrRefreshTicketList(ticketList);
       this.setState({refreshingTickets: false});
     }).catch((error) => {
-        this.setState({refreshingTickets: false});
+      alert("Failed to refresh ticket list. Error: " + JSON.stringify(error));
+      this.setState({refreshingTickets: false});
     });
   }
 

@@ -6,6 +6,7 @@ import aws_client_dynamodb
 import yeti_exceptions
 import yeti_logging
 import yeti_models
+import yeti_service_ticket
 import yeti_utils_lambda_handler
 
 logger = yeti_logging.get_logger("YetiTicketApi")
@@ -61,7 +62,7 @@ def get_all_tickets(event, context):
     try:
         # TODO: Auth
 
-        tickets = aws_client_dynamodb.TicketServiceTicketTable.get_all_tickets()
+        tickets = yeti_service_ticket.get_all_tickets()
 
         return yeti_api_response.ok(tickets)
 

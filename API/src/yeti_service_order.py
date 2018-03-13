@@ -36,6 +36,10 @@ def create_order(ticket_list, buyer_id):
     logger.info("Order inserted to DB")
 
 
+def get_orders_for_user_id(user_id):
+    return aws_client_dynamodb.OrderServiceOrderTable.get_orders_for_user_id(user_id)
+
+
 def handle_payment_notification(notification_type, data, order_id):
     if notification_type == yeti_models.PaymentSNSMessageRecordType.new_payment:
         payment = yeti_models.Payment.from_sns_message(data)

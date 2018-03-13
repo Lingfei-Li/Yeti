@@ -1,6 +1,7 @@
 import log from "../components/log";
 
 
+// Ticket actions
 export const SET_OR_REFRESH_TICKET_LIST = 'SET_OR_REFRESH_TICKET_LIST';
 export const TOGGLE_TICKET_LIST_GROUP_BY = 'TOGGLE_TICKET_LIST_GROUP_BY';
 export const SET_TICKET_LIST_GROUP_BY_PICKUP_TIME = 'SET_TICKET_LIST_GROUP_BY_PICKUP_TIME';
@@ -9,6 +10,9 @@ export const UPDATE_TICKET_SEARCH_TEXT = 'UPDATE_TICKET_SEARCH_TEXT';
 export const ADD_TICKET_TO_CART = 'ADD_TICKET_TO_CART';
 export const CHANGE_TICKET_QUANTITY_IN_CART = 'CHANGE_TICKET_QUANTITY_IN_CART';
 export const DELETE_TICKET_FROM_CART = 'DELETE_TICKET_FROM_CART';
+
+// Order actions
+export const SET_OR_REFRESH_ORDER_LIST = 'SET_OR_REFRESH_ORDER_LIST';
 
 export function setOrRefreshTicketList(ticketList) {
   log.info('Action: setOrRefreshTicketsList');
@@ -78,5 +82,14 @@ export function deleteTicketFromCart(ticketId) {
   return {
     type: DELETE_TICKET_FROM_CART,
     ticketId
+  };
+}
+
+export function setOrRefreshOrderList(orderList) {
+  log.info('Action: setOrRefreshOrderList');
+
+  return {
+    type: SET_OR_REFRESH_ORDER_LIST,
+    orderList
   };
 }

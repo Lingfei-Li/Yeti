@@ -3,7 +3,7 @@ import json
 import boto3
 import logging
 
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 
 import yeti_exceptions
 import yeti_logging
@@ -151,6 +151,18 @@ class TicketServiceTicketTable:
 ##############################################
 class OrderServiceOrderTable:
     table_name = 'Yeti-OrderService-OrderTable'
+
+    @classmethod
+    def get_orders_for_user_id(cls, user_id):
+        order_table = dynamodb.Table(cls.table_name)
+
+        response = order_table.scan(
+            FilterExpression=Attr('buyer_id').eq(user_id)
+        )
+
+        if 'Items' in response and response['Items']:
+            return response['Items']
+        return []
 
     @classmethod
     def get_order_item(cls, order_id, order_version):

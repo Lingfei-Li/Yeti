@@ -12,6 +12,7 @@ const defaultState = {
   ticketListGroupByIndex: 0,
   ticketListGroupBy: TICKET_LIST_GROUP_BY_OPTIONS[0],
   ticketSearchText: "",
+  orderList: [],
   shoppingCart: [],
   user: {
     userId: 'lingfeil',
@@ -84,6 +85,10 @@ export default function(state=defaultState, action) {
       }
 
       log.info(`delete ticketId ${action.ticketId} from cart`);
+      return newState;
+
+    case Actions.SET_OR_REFRESH_ORDER_LIST:
+      newState.orderList = action.orderList;
       return newState;
 
     default:
