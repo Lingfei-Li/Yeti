@@ -1,6 +1,6 @@
 import React from 'react';
 import QRCode from 'react-native-qrcode'
-import Moment from 'moment';
+import moment from 'moment';
 import {
   Animated,
   Text,
@@ -27,7 +27,7 @@ class OrderItemListRow extends React.Component{
   };
 
   parseOrderPlacedTime(orderPlacedTime) {
-    return Moment(orderPlacedTime).format('M-D ddd YYYY');
+    return moment(orderPlacedTime).format('M-D ddd YYYY');
   }
 
   getTotalTicketsInOrder(order) {
@@ -63,12 +63,29 @@ class OrderItemListRow extends React.Component{
     return `${orderId}/${ticketId}`;
   }
 
+  getDynamicTicketContainerStyle(orderItem) {
+    if(moment(orderItem.ticket.distribution_start_datetime).isSame(moment(), 'day')) {
+      return {
+        borderColor: '#00699D',
+        shadowColor: '#eee',
+        shadowOffset: {
+          width: 5,
+          height: 5
+        },
+        shadowOpacity: 0.5
+      };
+    }
+    return {
+      borderColor: '#eee'
+    };
+  }
+
   getTicketList(order) {
     return order.orderItems.map((orderItem) => {
       return (
-        <View style={styles.ticketContainer}>
-          <Text style={styles.ticketAttributeText}>{orderItem.ticket.ticketType}</Text>
-          <Text style={styles.ticketAttributeText}>{orderItem.ticket.distributionStartTime} - {orderItem.ticket.distributionEndTime} (x hours later)</Text>
+        <View style={[styles.ticketContainer, this.getDynamicTicketContainerStyle(orderItem)]}>
+          <Text style={styles.ticketAttributeText}>{orderItem.ticket.ticket_type}</Text>
+          <Text style={styles.ticketAttributeText}>{orderItem.ticket.distribution_start_datetime} - {orderItem.ticket.distribution_end_datetime} (x hours later)</Text>
           <Text style={styles.ticketAttributeText}>{this.getPickupStatusString(orderItem.pickupStatus)}</Text>
           <View style={styles.qrCodeView}>
             <QRCode

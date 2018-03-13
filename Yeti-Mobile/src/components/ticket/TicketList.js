@@ -22,6 +22,7 @@ class TicketList extends React.Component{
   _keyExtractor = (ticket, index) => ticket.ticketId;
 
   renderTicketRow = ({item}) => {
+    console.log('rendering ticket row...item: ' + JSON.stringify(item));
     if(item.noResult === true) {
       return (<Text style={styles.noResultBanner}>No Result</Text>);
     }
@@ -33,16 +34,20 @@ class TicketList extends React.Component{
   };
 
   getTicketsWithSearchText() {
-    let tickets = JSON.parse(JSON.stringify(this.props.tickets));
+    let tickets = JSON.parse(JSON.stringify(this.props.ticketList));
     const rawSearchText = this.props.ticketSearchText;
     const searchTextList = rawSearchText.split(' ');
 
+    log.info(`tickets: ${JSON.stringify(tickets)}`);
     return tickets.filter((t) => {
-      const searchableValues = [t.ticketType, t.distributionStartTime, t.distributionEndTime, t.ticketAmount, t.ticketPrice];
+      const searchableValues = [t.ticket_type, t.distribution_start_datetime, t.distribution_end_datetime, t.distribution_location, t.ticket_amount, t.ticket_price];
 
       // Use 2 reducers to pick tickets that have at least one matching property per search word
       return searchTextList.reduce((accumulatorForTicket, searchText) => {
         const result = searchableValues.reduce((accumulatorForValue, searchableValue) => {
+          if(searchableValue === undefined) {
+            return accumulatorForValue;
+          }
           return accumulatorForValue || searchableValue.toString().toLowerCase().includes(searchText.toLowerCase());
         }, false);
         return accumulatorForTicket && result;
@@ -60,7 +65,7 @@ class TicketList extends React.Component{
     let groupedTicketsList = [];
     if(groupBy === TICKET_LIST_GROUP_BY_PICKUP_TIME) {
       tickets.forEach((ticket) => {
-        const pickupTime = ticket.distributionStartTime + " - " + ticket.distributionEndTime;
+        const pickupTime = ticket.distribution_start_datetime + "," + ticket.distribution_end_datetime;
         if (!(pickupTime in groupedTickets)) {
           groupedTickets[pickupTime] = [];
         }
@@ -76,7 +81,7 @@ class TicketList extends React.Component{
       }
     } else {
       tickets.forEach((ticket) => {
-        const ticketType = ticket.ticketType;
+        const ticketType = ticket.ticket_type;
         if (!(ticketType in groupedTickets)) {
           groupedTickets[ticketType] = [];
         }
@@ -111,6 +116,7 @@ class TicketList extends React.Component{
 
 function mapStateToProps(state) {
   return {
+    ticketList: state.ticketList,
     ticketListGroupBy: state.ticketListGroupBy,
     ticketSearchText: state.ticketSearchText
   }
@@ -137,8 +143,7 @@ const isIphoneX = () => {
 const styles = StyleSheet.create({
   ticketList: {
     width: '100%',
-    height: '100%',
-    paddingBottom: isIphoneX() ? 55 : 39,
+    flex: 1,
   },
   noResultBanner: {
     width: '100%',

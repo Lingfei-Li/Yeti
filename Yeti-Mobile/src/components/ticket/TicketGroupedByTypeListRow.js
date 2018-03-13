@@ -24,8 +24,8 @@ export default class TicketGroupedByTypeListRow extends React.Component{
           onPress={() => this.props.navigation.navigate('TicketDetails', {ticket}) }
           style={styles.ticketDetailsLink}
         >
-          <Text style={{textAlign: 'center'}}>{ticket.distributionStartTime} - {ticket.distributionStartTime} </Text>
-          <Text style={{textAlign: 'center'}}>{ticket.ticketAmount} ${ticket.ticketPrice}</Text>
+          <Text style={{textAlign: 'center'}}>{ticket.distribution_start_datetime} - {ticket.distribution_end_datetime} </Text>
+          <Text style={{textAlign: 'center'}}>{ticket.ticket_amount} ${ticket.ticket_price}</Text>
         </TouchableOpacity>
       )
     });
@@ -49,6 +49,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 20,
     textAlign: 'center',
+    marginTop: 20
   },
   ticketDetailsLink: {
     fontSize: 14,

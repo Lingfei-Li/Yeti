@@ -35,7 +35,6 @@ class AddToCartConfirmationBanner extends React.Component {
   }
 
   render() {
-
     return (
       <Animated.View style={{width: '100%', opacity: this.state.fadeAnim}}>
         <View style={styles.confirmationBanner}>

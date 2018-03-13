@@ -5,19 +5,21 @@ const ticketTypes = [
 ];
 
 const distributionStartTime = [
-  '2/2 Fri 11:00',
-  '2/5 Mon 16:00',
-  '2/6 Tue 15:00',
-  '2/7 Tue 15:30',
-  '2/9 Fri 15:00',
+  '2018-02-01T11:00:00-08:00',
+  '2018-02-25T11:00:00-08:00',
+  '2018-02-26T16:00:00-08:00',
+  '2018-02-27T15:00:00-08:00',
+  '2018-02-28T15:30:00-08:00',
+  '2018-03-11T15:00:00-08:00'
 ];
 
 const distributionEndTime = [
-  '2/2 Fri 11:30',
-  '2/5 Mon 16:30',
-  '2/6 Tue 15:30',
-  '2/7 Tue 16:00',
-  '2/9 Fri 15:30',
+  '2018-02-01T11:30:00-08:00',
+  '2018-02-25T11:30:00-08:00',
+  '2018-02-26T16:30:00-08:00',
+  '2018-02-27T15:30:00-08:00',
+  '2018-02-28T16:00:00-08:00',
+  '2018-03-12T15:30:00-08:00'
 ];
 
 export const getMockOrders= function() {
@@ -34,8 +36,8 @@ export const getMockOrders= function() {
               ticketId: 'ticketId-0',
               ticketType: ticketTypes[0],
               ticketPrice: 59,
-              distributionStartTime: distributionStartTime[0],
-              distributionEndTime: distributionEndTime[0],
+              distributionStartTime: distributionStartTime[2],
+              distributionEndTime: distributionEndTime[2],
             },
             purchaseAmount: 5,
             pickupStatus: 0
@@ -45,8 +47,8 @@ export const getMockOrders= function() {
               ticketId: 'id-1',
               ticketType: ticketTypes[1],
               ticketPrice: 59,
-              distributionStartTime: distributionStartTime[1],
-              distributionEndTime: distributionEndTime[1],
+              distributionStartTime: distributionStartTime[3],
+              distributionEndTime: distributionEndTime[3],
             },
             purchaseAmount: 10,
             pickupStatus: 0

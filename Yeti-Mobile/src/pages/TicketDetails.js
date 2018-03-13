@@ -1,22 +1,11 @@
 import React from 'react'
 import {Vibration, Linking, StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity, ScrollView} from "react-native";
-import { getMockTickets } from '../mockingData/ticket'
-import TicketList from "../components/ticket/TicketList";
-import Icon from 'react-native-vector-icons/FontAwesome';
-import {
-  Menu,
-  MenuProvider,
-  MenuOptions,
-  MenuTrigger,
-  renderers,
-} from 'react-native-popup-menu';
 import {bindActionCreators} from "redux";
 import * as Actions from '../actions/index'
 import { connect } from 'react-redux'
 import ShoppingCartButton from '../components/headerButton/ShoppingCartButton';
 import GoBackButton from '../components/headerButton/GoBackButton';
 import {Dropdown} from "react-native-material-dropdown";
-import log from "../components/log";
 import CommonStyles from "../styles";
 import AddToCartConfirmationBanner from "../components/ticketDetails/AddToCartConfirmationBanner";
 
@@ -66,11 +55,11 @@ class TicketDetails extends React.Component {
 
         <ScrollView style={{flex: 1, width: '100%'}}>
           <View style={{flex: 1, alignItems: 'center'}}>
-            <Text style={{fontSize: 22, marginTop: 10}}>{ticket.ticketType}</Text>
-            <Text>{ticket.ticketAmount} tickets left</Text>
-            <Text style={{fontSize: 20, fontWeight: 'bold', marginTop: 12, marginBottom: 8}}>$ {ticket.ticketPrice}</Text>
+            <Text style={{fontSize: 22, marginTop: 10}}>{ticket.ticket_type}</Text>
+            <Text>{ticket.ticket_amount} tickets left</Text>
+            <Text style={{fontSize: 20, fontWeight: 'bold', marginTop: 12, marginBottom: 8}}>$ {ticket.ticket_price}</Text>
 
-            <Text>{ticket.distributionStartTime} - {ticket.distributionEndTime} (x hours later)</Text>
+            <Text>{ticket.distribution_start_datetime} - {ticket.distribution_end_datetime} (x hours later)</Text>
 
             <View style={styles.quantityDropdown}>
               <Dropdown

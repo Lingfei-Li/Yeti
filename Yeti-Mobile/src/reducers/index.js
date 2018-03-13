@@ -8,6 +8,7 @@ const TICKET_LIST_GROUP_BY_OPTIONS = [TICKET_LIST_GROUP_BY_PICKUP_TIME, TICKET_L
 
 const defaultState = {
   userId: 'lingfeil',
+  ticketList: [],
   ticketListGroupByIndex: 0,
   ticketListGroupBy: TICKET_LIST_GROUP_BY_OPTIONS[0],
   ticketSearchText: "",
@@ -26,6 +27,10 @@ export default function(state=defaultState, action) {
   let newState = cloneObject(state);
 
   switch(action.type) {
+    case Actions.SET_OR_REFRESH_TICKET_LIST:
+      newState.ticketList = action.ticketList;
+      return newState;
+
     case Actions.TOGGLE_TICKET_LIST_GROUP_BY:
       const newIndex = (newState.ticketListGroupByIndex + 1 ) % TICKET_LIST_GROUP_BY_OPTIONS.length;
       newState.ticketListGroupByIndex = newIndex;

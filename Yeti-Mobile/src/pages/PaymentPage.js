@@ -67,15 +67,17 @@ class PaymentPage extends React.Component {
         this.setState({
           displayStep3View: true
         });
-        this._scrollView.scrollTo({x: Dimensions.get('window').width*2});
-        // setTimeout(() => {this._scrollView.scrollTo({x: Dimensions.get('window').width*2}) }, 1000);
-        // Linking.openURL('https://venmo.com/code?user_id=1990244970790912928');
+        // this._scrollView.scrollTo({x: Dimensions.get('window').width*2});
+        setTimeout(() => {this._scrollView.scrollTo({x: Dimensions.get('window').width*2}) }, 1000);
+        Linking.openURL('https://venmo.com/code?user_id=1990244970790912928');
         break;
       case 4:
         this.setState({
           displayStep4View: true
         });
-        this._scrollView.scrollTo({x: Dimensions.get('window').width*3});
+        // this._scrollView.scrollTo({x: Dimensions.get('window').width*3});
+        setTimeout(() => {this._scrollView.scrollTo({x: Dimensions.get('window').width*2}) }, 1000);
+        Linking.openURL('https://venmo.com/code?user_id=1990244970790912928');
         break;
     }
   }

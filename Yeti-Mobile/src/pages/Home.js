@@ -1,8 +1,7 @@
 import React from 'react'
 import {Linking, StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput, TouchableHighlight, TouchableOpacity} from "react-native";
-import { getMockTickets } from '../mockingData/ticket'
+import { getAllTickets } from '../client/ticket'
 import TicketList from "../components/ticket/TicketList";
-import Icon from 'react-native-vector-icons/FontAwesome';
 import HeaderSearchBar from "../components/ticket/HeaderSearchBar";
 import {
   Menu,
@@ -19,6 +18,7 @@ import log from "../components/log";
 import CommonStyles from '../styles';
 import ShoppingCartButton from '../components/headerButton/ShoppingCartButton';
 import OpenDrawerButton from '../components/headerButton/OpenDrawerButton';
+import PickupNotification from "../components/ticket/PickupNotification";
 
 const { Popover } = renderers;
 
@@ -38,8 +38,11 @@ class HomeScreen extends React.Component {
   }
 
   componentDidMount() {
-    this.props.navigation.setParams({
-
+    getAllTickets().then((response) => {
+      const ticketList = JSON.parse(response.data);
+      this.props.setOrRefreshTicketList(ticketList);
+    }).catch((error) => {
+      alert("Failed to get tickets. Please retry or check your internet connection");
     });
   }
 
@@ -48,7 +51,9 @@ class HomeScreen extends React.Component {
       <View style={styles.container}>
         <OptionsBar />
 
-        <TicketList tickets={getMockTickets()} navigation={this.props.navigation}/>
+        <TicketList navigation={this.props.navigation}/>
+
+        <PickupNotification navigation={this.props.navigation}/>
 
       </View>
     )
@@ -77,28 +82,9 @@ export default connect(mapStateToProps, mapDispatchToProps)(HomeScreen)
 
 
 const styles = StyleSheet.create({
-  menuContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 10,
-    backgroundColor: '#ecf0f1',
-  },
-  paragraph: {
-    margin: 24,
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#34495e',
-  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
-  },
-  separator: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#dddddd'
   },
 }) ;

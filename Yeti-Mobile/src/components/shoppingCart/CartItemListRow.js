@@ -136,8 +136,8 @@ class CartItemListRow extends React.Component{
       <View>
 
         <Animated.View style={{opacity: this.state.fadeAnim}}>
-          <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginTop: 20}}>{ticket.ticketType}</Text>
-          <Text style={{textAlign: 'center', marginTop: 10}}>{ticket.distributionStartTime} - {ticket.distributionStartTime}</Text>
+          <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginTop: 20}}>{ticket.ticket_type}</Text>
+          <Text style={{textAlign: 'center', marginTop: 10}}>{ticket.distribution_start_datetime} - {ticket.distribution_end_datetime}</Text>
           <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 10}}>
             <Text style={{textAlign: 'center'}}>Qty: </Text>
             <TextInput
