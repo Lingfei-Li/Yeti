@@ -10,8 +10,8 @@ import CommonStyles from "../../styles";
 class ShoppingCartButton extends React.Component {
 
   getTintColor() {
-    if(this.props.shoppingCart.length) {
-      return '#00699D';
+    if(this.props.tintColor) {
+      return this.props.tintColor;
     }
     return '#666';
   }
@@ -19,16 +19,12 @@ class ShoppingCartButton extends React.Component {
   render() {
     return (
       <View style={CommonStyles.headerItemView}>
-        <TouchableOpacity
-          style={CommonStyles.headerButton}
-          onPress={() => this.props.navigation.navigate('ShoppingCartStack') }
-        >
-
+        <View style={CommonStyles.headerButton} >
         <Icon name='shopping-cart' size={28} color={this.getTintColor()} style={CommonStyles.headerRightItem}/>
         <Text style={styles.cartItemsCount}>
           {this.props.shoppingCart.length === 0 ? "" : this.props.shoppingCart.length}
         </Text>
-        </TouchableOpacity>
+        </View>
       </View>
     )
   }
@@ -49,7 +45,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(ShoppingCartButton)
 
 const styles = StyleSheet.create({
   cartItemsCount: {
-    top: 13,
+    top: 9,
     fontSize: 10,
     fontWeight: 'bold',
     color: 'white',

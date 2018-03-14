@@ -6,8 +6,8 @@ import React from 'react'
 import {StyleSheet, Button, Image, Text, TouchableOpacity, View} from "react-native";
 import Styles from '../styles'
 import HeaderSearchBar from "../components/order/HeaderSearchBar";
-import OpenDrawerButton from "../components/headerButton/OpenDrawerButton";
-import TicketListButton from "../components/headerButton/TicketListButton";
+import OpenDrawerButton from "../components/buttons/OpenDrawerButton";
+import TicketListButton from "../components/buttons/TicketListButton";
 import OrderItemList from "../components/order/OrderItemList";
 import { getMockOrders } from '../mockingData/orders'
 import {getAllOrdersForUser} from "../client/order";

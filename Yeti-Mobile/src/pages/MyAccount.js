@@ -8,11 +8,11 @@ import {connect} from "react-redux";
 import Styles from '../styles'
 import CommonStyles from '../styles';
 import * as Actions from '../actions/index'
-import OpenDrawerButton from '../components/headerButton/OpenDrawerButton';
-import TicketListButton from '../components/headerButton/TicketListButton';
 import CartItemList from "../components/shoppingCart/CartItemList";
 import log from "../components/log";
 import {Dropdown} from "react-native-material-dropdown";
+import OpenDrawerButton from "../components/buttons/OpenDrawerButton";
+import TicketListButton from "../components/buttons/TicketListButton";
 
 
 class MyAccount extends React.Component {

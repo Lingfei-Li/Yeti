@@ -14,6 +14,7 @@ import PaymentPage from "./src/pages/PaymentPage";
 import RootErrorBoundary from "expo/src/launch/RootErrorBoundary";
 import ShoppingCart from "./src/pages/ShoppingCart";
 import configureStore from './src/store/configureStore';
+import ShoppingCartTabBarButton from "./src/components/buttons/ShoppingCartTabBarButton";
 
 
 const ticketStackNav = StackNavigator(
@@ -72,7 +73,7 @@ const debugViewStackNav = StackNavigator(
 
 
 const getTicketStackTabBarIcon = function(tintColor) {
-  if(tintColor !== 'gray' && tintColor !== 'black') {
+  if(tintColor === '#00699D') {
     return <Image source={require('./src/resources/assets/himalaya.png')} style={[styles.ticketTabBarIcon]} />;
   } else {
     return <Image source={require('./src/resources/assets/himalaya-bw.png')} style={[styles.ticketTabBarIcon]} />;
@@ -80,46 +81,46 @@ const getTicketStackTabBarIcon = function(tintColor) {
 };
 
 
-const mainDrawerNavigator = DrawerNavigator({
-  TicketStack: {
+const mainDrawerNavigator = TabNavigator({
+  Tickets: {
     screen: ticketStackNav,
     navigationOptions: {
-      drawerLabel:"Tickets",
-      drawerIcon: ({ tintColor }) => getTicketStackTabBarIcon(tintColor)
+      tabBarLabel:"Tickets",
+      tabBarIcon: ({ tintColor }) => getTicketStackTabBarIcon(tintColor)
     }
   },
-  ShoppingCartStack: {
+  Cart: {
     screen: shoppingCartStackNav,
     navigationOptions: {
-      drawerLabel: "Shopping Cart",
-      drawerIcon: ({tintColor}) => <Icon name='shopping-cart' size={24} color={tintColor} />
+      tabBarLabel: "Shopping Cart",
+      tabBarIcon: ({tintColor}) => <ShoppingCartTabBarButton tintColor={tintColor}/>
     },
   },
-  MyOrdersStack: {
+  MyOrders: {
     screen: myOrdersStackNav,
     navigationOptions: {
       drawerLabel: "My Orders",
-      drawerIcon: ({tintColor}) => <Icon name='history' size={24} color={tintColor} />
+      tabBarIcon: ({tintColor}) => <Icon name='history' size={24} color={tintColor} />
     },
   },
-  MyAccountStack: {
+  MyAccount: {
     screen: myAccountStackNav,
     navigationOptions: {
       drawerLabel: "My Account",
-      drawerIcon: ({tintColor}) => <Icon name='user-circle' size={24} color={tintColor}/>
+      tabBarIcon: ({tintColor}) => <Icon name='user-circle' size={24} color={tintColor}/>
     }
   },
-  DebugViewStack: {
+  Debug: {
     screen: debugViewStackNav,
     navigationOptions: {
       drawerLabel: "Debug",
-      drawerIcon: ({tintColor}) => <Icon name='code' size={24} color={tintColor}/>
+      tabBarIcon: ({tintColor}) => <Icon name='code' size={24} color={tintColor}/>
     }
   }
 }, {
-  contentOptions : {
+  tabBarOptions: {
     activeTintColor: '#00699D',
-    inactiveTintColor: 'black',
+    inactiveTintColor: 'grey',
   },
 });
 

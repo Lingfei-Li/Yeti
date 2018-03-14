@@ -34,6 +34,7 @@ def create_order(ticket_list, buyer_id):
                                     )
     aws_client_dynamodb.OrderServiceOrderTable.put_order_item(order)
     logger.info("Order inserted to DB")
+    return order.order_id
 
 
 def get_orders_for_user_id(user_id):

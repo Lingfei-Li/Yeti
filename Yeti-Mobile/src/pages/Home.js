@@ -16,9 +16,9 @@ import { connect } from 'react-redux'
 import OptionsBar from "../components/ticket/OptionsBar";
 import log from "../components/log";
 import CommonStyles from '../styles';
-import ShoppingCartButton from '../components/headerButton/ShoppingCartButton';
-import OpenDrawerButton from '../components/headerButton/OpenDrawerButton';
 import PickupNotification from "../components/ticket/PickupNotification";
+import ShoppingCartButton from "../components/buttons/ShoppingCartButton";
+import OpenDrawerButton from "../components/buttons/OpenDrawerButton";
 
 const { Popover } = renderers;
 

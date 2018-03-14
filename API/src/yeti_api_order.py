@@ -47,7 +47,6 @@ def handle_ticket_notification(event, context):
 
 
 def get_all_orders_for_user(event, context):
-    # TODO: testing
     logger.info("Received a create order request: {}".format(event))
 
     try:
@@ -68,7 +67,6 @@ def get_all_orders_for_user(event, context):
 
 
 def create_order(event, context):
-    # TODO: testing
     logger.info("Received a create order request: {}".format(event))
 
     try:
@@ -76,14 +74,15 @@ def create_order(event, context):
 
         body = yeti_utils_lambda_handler.get_body(event)
 
+        # Other attributes (order id, order version, order datetime, expiry) will be inserted by the backend service.
         ticket_list = body['ticket_list']
         buyer_id = body['buyer_id']
 
         logger.info("Received an order: ticket list: {}, buyer_id: {}".format(ticket_list, buyer_id))
 
-        yeti_service_order.create_order(ticket_list, buyer_id)
+        order_id = yeti_service_order.create_order(ticket_list, buyer_id)
 
-        return yeti_api_response.ok_no_data()
+        return yeti_api_response.ok({'order_id': order_id})
 
     except (yeti_exceptions.YetiApiClientErrorException, yeti_exceptions.DatabaseItemNotFoundError) as e:
         return yeti_api_response.client_error(str(e))

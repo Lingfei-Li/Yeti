@@ -3,8 +3,8 @@ import {Vibration, Linking, StyleSheet, Button, FlatList, Image, Navigator, Pick
 import {bindActionCreators} from "redux";
 import * as Actions from '../actions/index'
 import { connect } from 'react-redux'
-import ShoppingCartButton from '../components/headerButton/ShoppingCartButton';
-import GoBackButton from '../components/headerButton/GoBackButton';
+import ShoppingCartButton from '../components/buttons/ShoppingCartButton';
+import GoBackButton from '../components/buttons/GoBackButton';
 import {Dropdown} from "react-native-material-dropdown";
 import CommonStyles from "../styles";
 import AddToCartConfirmationBanner from "../components/ticketDetails/AddToCartConfirmationBanner";

@@ -7,17 +7,27 @@ import {connect} from "react-redux";
 import {TICKET_LIST_GROUP_BY_PICKUP_TIME, TICKET_LIST_GROUP_BY_TICKET_TYPE} from "../../reducers/index";
 import CommonStyles from "../../styles";
 
-class TicketListButton extends React.Component {
+class ShoppingCartButton extends React.Component {
+
+  getTintColor() {
+    if(this.props.shoppingCart.length) {
+      return '#00699D';
+    }
+    return '#666';
+  }
 
   render() {
     return (
       <View style={CommonStyles.headerItemView}>
         <TouchableOpacity
           style={CommonStyles.headerButton}
-          onPress={() => this.props.navigation.navigate('TicketStack') }
+          onPress={() => this.props.navigation.navigate('Cart') }
         >
 
-          <Icon name='ticket' size={28} color='#666' style={CommonStyles.headerRightItem}/>
+        <Icon name='shopping-cart' size={28} color={this.getTintColor()} style={CommonStyles.headerRightItem}/>
+        <Text style={styles.cartItemsCount}>
+          {this.props.shoppingCart.length === 0 ? "" : this.props.shoppingCart.length}
+        </Text>
         </TouchableOpacity>
       </View>
     )
@@ -35,7 +45,15 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(Actions, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(TicketListButton)
+export default connect(mapStateToProps, mapDispatchToProps)(ShoppingCartButton)
 
 const styles = StyleSheet.create({
+  cartItemsCount: {
+    top: 13,
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: 'white',
+    position: 'absolute',
+    fontFamily: Platform.OS === 'ios' ? "Avenir" : "Roboto"
+  }
 }) ;

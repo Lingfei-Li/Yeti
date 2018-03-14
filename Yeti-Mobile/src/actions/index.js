@@ -8,6 +8,7 @@ export const SET_TICKET_LIST_GROUP_BY_PICKUP_TIME = 'SET_TICKET_LIST_GROUP_BY_PI
 export const SET_TICKET_LIST_GROUP_BY_TICKET_TYPE = 'SET_TICKET_LIST_GROUP_BY_TICKET_TYPE';
 export const UPDATE_TICKET_SEARCH_TEXT = 'UPDATE_TICKET_SEARCH_TEXT';
 export const ADD_TICKET_TO_CART = 'ADD_TICKET_TO_CART';
+export const CLEAR_SHOPPING_CART = 'CLEAR_SHOPPING_CART';
 export const CHANGE_TICKET_QUANTITY_IN_CART = 'CHANGE_TICKET_QUANTITY_IN_CART';
 export const DELETE_TICKET_FROM_CART = 'DELETE_TICKET_FROM_CART';
 
@@ -53,6 +54,14 @@ export function updateTicketSearchText(text) {
   return {
     type: UPDATE_TICKET_SEARCH_TEXT,
     text: text
+  };
+}
+
+export function clearShoppingCart() {
+  log.info('Action: clearShoppingCart');
+
+  return {
+    type: CLEAR_SHOPPING_CART,
   };
 }
 

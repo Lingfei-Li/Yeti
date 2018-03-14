@@ -37,7 +37,7 @@ class PaymentPage extends React.Component {
       <View style={styles.headerItemView}>
         <TouchableOpacity
         style={styles.headerButton}
-        onPress={() => navigation.navigate('MyOrdersStack') }
+        onPress={() => navigation.navigate('MyOrders') }
         >
           <Icon name='history' size={28} color='#666' style={styles.headerRightItem}/>
         </TouchableOpacity>
@@ -84,22 +84,23 @@ class PaymentPage extends React.Component {
 
   getTotalPrice(payingOrder) {
     return payingOrder.reduce((accumulator, singleTicketOrder) => {
-      return accumulator + parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticketPrice);
+      return accumulator + parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticket_price);
     }, 0);
   }
 
   getPriceForSingleTicketOrder(singleTicketOrder) {
-    return parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticketPrice);
+    return parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticket_price);
   }
 
   step1View(orderId, payingOrder) {
     const ticketsTextElements = payingOrder.map((singleTicketOrder) => {
-        return <Text>{singleTicketOrder.ticket.ticketType} {singleTicketOrder.purchaseAmount} * {singleTicketOrder.ticket.ticketPrice} = ${this.getPriceForSingleTicketOrder(singleTicketOrder)}</Text>
+        return <Text>{singleTicketOrder.ticket.ticketType} {singleTicketOrder.purchaseAmount} * {singleTicketOrder.ticket.ticket_price} = ${this.getPriceForSingleTicketOrder(singleTicketOrder)}</Text>
     });
 
     return (
       <View style={styles.paymentStepView}>
-        <Text style={{fontWeight: 'bold', fontSize: 20}}>Pay for your order:</Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20}}>Your order has been placed!</Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20}}>Now pay for your order:</Text>
         {ticketsTextElements}
         <Text>Total: ${this.getTotalPrice(payingOrder)}</Text>
         <Text style={{fontWeight: 'bold', fontSize: 20}}>Click to copy the Order Id</Text>

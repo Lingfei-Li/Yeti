@@ -149,7 +149,7 @@ class CartItemListRow extends React.Component{
               textAlign={'center'}
               value={this.state.quantityText}
             />
-            <Text style={{textAlign: 'center'}}> * ${ticket.ticketPrice} = ${ticket.ticketPrice * this.props.quantity}</Text>
+            <Text style={{textAlign: 'center'}}> * ${ticket.ticket_price} = ${ticket.ticket_price * this.props.quantity}</Text>
           </View>
         </Animated.View>
 

@@ -16,6 +16,7 @@ import log from "../log";
 import {TICKET_LIST_GROUP_BY_TICKET_TYPE, TICKET_LIST_GROUP_BY_PICKUP_TIME} from '../../reducers/index'
 import RowSeparator from '../RowSeparator';
 import {Dropdown} from "react-native-material-dropdown";
+import {createOrder} from "../../client/order";
 
 
 class OrderSummaryBanner extends React.Component{
@@ -23,9 +24,30 @@ class OrderSummaryBanner extends React.Component{
   getTotalPrice() {
     let totalPrice = 0;
     this.props.shoppingCart.forEach((item) => {
-      totalPrice += item.purchaseAmount * item.ticket.ticketPrice;
+      totalPrice += item.purchaseAmount * item.ticket.ticket_price;
     });
     return totalPrice;
+  }
+
+  placeOrder() {
+    const buyer_id = "lingfeil";
+    const ticket_list = this.props.shoppingCart.map((shoppingCartItem) => {
+      return {
+        "purchase_amount": shoppingCartItem.purchaseAmount,
+        ...shoppingCartItem.ticket
+      }
+    });
+
+    createOrder(buyer_id, ticket_list).then((response) => {
+      setTimeout(() => {
+        this.props.clearShoppingCart();
+      }, 1000);
+
+      const orderId = JSON.parse(response.data).order_id;
+      this.props.navigation.navigate('PaymentPage', {orderId, payingOrder: this.props.shoppingCart});
+    }).catch((error) => {
+      alert("Failed to place order. Error: " + JSON.stringify(error));
+    });
   }
 
   getPlaceOrderButton() {
@@ -35,7 +57,7 @@ class OrderSummaryBanner extends React.Component{
           <Button
             title="Place Order"
             color="#00699D"
-            onPress={() => {this.props.navigation.navigate('PaymentPage', {orderId: '12345678901234567890', payingOrder: this.props.shoppingCart})}}
+            onPress={() => {this.placeOrder()}}
           />
         </View>
       )

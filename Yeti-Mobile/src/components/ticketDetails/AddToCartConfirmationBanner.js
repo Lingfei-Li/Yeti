@@ -28,7 +28,7 @@ class AddToCartConfirmationBanner extends React.Component {
       return accumulator + orderItem.purchaseAmount;
     }, 0);
     const totalPrice = this.props.shoppingCart.reduce((accumulator, orderItem) => {
-      return accumulator + orderItem.purchaseAmount * orderItem.ticket.ticketPrice;
+      return accumulator + orderItem.purchaseAmount * orderItem.ticket.ticket_price;
     }, 0);
     return `Proceed to checkout (${ticketAmount} tickets) $${totalPrice}`;
 
@@ -40,7 +40,7 @@ class AddToCartConfirmationBanner extends React.Component {
         <View style={styles.confirmationBanner}>
           <Button
             title={this.getButtonTitle()}
-            onPress={() => this.props.navigation.navigate('ShoppingCart')}
+            onPress={() => this.props.navigation.navigate('Cart')}
             color="#00699D"
           />
         </View>

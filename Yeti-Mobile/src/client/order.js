@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-const api_endpoint = 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/order';
+const api_endpoint = 'https://fxsrb1p4k2.execute-api.us-west-2.amazonaws.com/prod/order/';
 const connectionTimeoutMs = 6000;
 
-const concatUrl = function(path) {
+function concatUrl(path) {
   if(path.length === 0) {
     return api_endpoint;
   }
@@ -11,6 +11,23 @@ const concatUrl = function(path) {
     return api_endpoint + path.substr(1);
   }
   return api_endpoint + path;
+};
+
+export const createOrder = function(buyer_id, ticket_list) {
+  return(
+    axios({
+      method: 'POST',
+      url: concatUrl('create'),
+      headers: {
+        "content-type": "application/json",
+      },
+      data: {
+        buyer_id,
+        ticket_list
+      },
+      timeout: connectionTimeoutMs,
+    })
+  )
 };
 
 export const getAllOrdersForUser = function() {
