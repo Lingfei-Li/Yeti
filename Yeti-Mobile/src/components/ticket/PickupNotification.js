@@ -6,8 +6,9 @@ import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
 import {TICKET_LIST_GROUP_BY_PICKUP_TIME, TICKET_LIST_GROUP_BY_TICKET_TYPE} from "../../reducers/index";
 
-class OptionsBar extends React.Component {
+class PickupNotification extends React.Component {
   render() {
+
     return (
       <View style={styles.pickupNotification}>
         <Button
@@ -31,7 +32,7 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(Actions, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(OptionsBar)
+export default connect(mapStateToProps, mapDispatchToProps)(PickupNotification)
 
 const styles = StyleSheet.create({
   pickupNotification: {

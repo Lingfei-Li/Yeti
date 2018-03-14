@@ -13,6 +13,7 @@ import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import * as Actions from '../../actions/index'
 import moment from "moment";
+import TicketMetadata from "./TicketMetadata";
 
 
 export default class TicketGroupedByPickupTimeListRow extends React.Component{
@@ -25,14 +26,15 @@ export default class TicketGroupedByPickupTimeListRow extends React.Component{
           onPress={() => this.props.navigation.navigate('TicketDetails', {ticket}) }
           style={styles.ticketDetailsLink}
         >
-          <Text style={{textAlign: 'center'}}>{ticket.ticket_type} {ticket.ticket_amount} ${ticket.ticket_price}</Text>
+          <Text style={styles.ticketTitle}>{ticket.ticket_type}</Text>
+          <TicketMetadata ticket={ticket}/>
         </TouchableOpacity>
       )
     });
     return details;
   }
 
-  getTicketTitle() {
+  getTicketGroupTitle() {
     const pickupTimeRange = this.props.ticketGroup.key.split(',');
     const pickupStartTime = moment(pickupTimeRange[0]);
     const pickupEndTime = moment(pickupTimeRange[1]);
@@ -40,8 +42,7 @@ export default class TicketGroupedByPickupTimeListRow extends React.Component{
     let dynamicDayOfWeek = '';
     if(pickupStartTime.isSame(today, "day")) {
       dynamicDayOfWeek = 'Today';
-    }
-    else if(pickupStartTime.isSame(today, "week")) {
+    } else if(pickupStartTime.isSame(today, "week")) {
       dynamicDayOfWeek = "This " + pickupStartTime.format("dddd");
     } else {
       dynamicDayOfWeek = pickupStartTime.format("dddd");
@@ -49,20 +50,20 @@ export default class TicketGroupedByPickupTimeListRow extends React.Component{
     if(pickupStartTime.year() === pickupEndTime.year() && pickupStartTime.dayOfYear() === pickupEndTime.dayOfYear()) {
       return (
         <View>
-          <Text style={styles.ticketTitle}>{pickupStartTime.format("M-D")} {dynamicDayOfWeek}</Text>
-          <Text style={styles.ticketTitle}>{pickupStartTime.format("h:mm")} - {pickupEndTime.format("h:mm a")}</Text>
+          <Text style={styles.ticketGroupTitle}>{pickupStartTime.format("M-D")} {dynamicDayOfWeek}</Text>
+          <Text style={styles.ticketGroupTitle}>{pickupStartTime.format("h:mm")} - {pickupEndTime.format("h:mm a")}</Text>
         </View>
       )
     }
     return (
-      <Text style={styles.ticketTitle}>{pickupStartTime.format("M/D h:mm a")} - {pickupEndTime.format("M/D h:mm a")}</Text>
+      <Text style={styles.ticketGroupTitle}>{pickupStartTime.format("M/D h:mm a")} - {pickupEndTime.format("M/D h:mm a")}</Text>
     )
   }
 
   render() {
     return (
       <View style={{alignItems: 'center'}}>
-        {this.getTicketTitle()}
+        {this.getTicketGroupTitle()}
         {this.getTicketDetailsButtonList(this.props.ticketGroup.val)}
         <RowSeparator />
       </View>
@@ -72,11 +73,28 @@ export default class TicketGroupedByPickupTimeListRow extends React.Component{
 
 
 const styles = StyleSheet.create({
-  ticketTitle: {
+  ticketGroupTitle: {
     fontWeight: 'bold',
     fontSize: 20,
     textAlign: 'center',
     marginTop: 20
+  },
+  ticketTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 5
+  },
+  ticketAmountText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 5
+  },
+  ticketPriceText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 5,
+    color: '#b00'
   },
   ticketDetailsLink: {
     fontSize: 14,
@@ -88,5 +106,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderColor: '#eee',
     padding: 20,
-  },
+    shadowColor: '#ccc',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.5
+    },
 }) ;

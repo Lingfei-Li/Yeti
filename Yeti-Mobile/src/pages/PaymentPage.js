@@ -93,6 +93,9 @@ class PaymentPage extends React.Component {
   }
 
   step1View(orderId, payingOrder) {
+
+    const orderIdString = `Yeti#${orderId}#`;
+
     const ticketsTextElements = payingOrder.map((singleTicketOrder) => {
         return <Text>{singleTicketOrder.ticket.ticketType} {singleTicketOrder.purchaseAmount} * {singleTicketOrder.ticket.ticket_price} = ${this.getPriceForSingleTicketOrder(singleTicketOrder)}</Text>
     });
@@ -105,8 +108,8 @@ class PaymentPage extends React.Component {
         <Text>Total: ${this.getTotalPrice(payingOrder)}</Text>
         <Text style={{fontWeight: 'bold', fontSize: 20}}>Click to copy the Order Id</Text>
         <Button
-          title={orderId}
-          onPress={() => { Clipboard.setString(orderId); this.showStepX(2); this._scrollView.scrollTo({x: Dimensions.get('window').width}) }}
+          title={orderIdString}
+          onPress={() => { Clipboard.setString(orderIdString); this.showStepX(2); this._scrollView.scrollTo({x: Dimensions.get('window').width}) }}
         />
       </View>
     );

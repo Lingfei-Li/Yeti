@@ -11,14 +11,14 @@ import TicketListButton from "../components/buttons/TicketListButton";
 import OrderItemList from "../components/order/OrderItemList";
 import { getMockOrders } from '../mockingData/orders'
 import {getAllOrdersForUser} from "../client/order";
+import HomeButton from "../components/buttons/HomeButton";
 
 
 class MyOrders extends React.Component {
   static navigationOptions = ({navigation}) => ({
     headerStyle: Styles.headerStyle,
     headerTitle: <HeaderSearchBar placeholderText="Search Orders"/>,
-    headerLeft: <OpenDrawerButton navigation={navigation}/>,
-    headerRight: <TicketListButton navigation={navigation}/>
+    headerLeft: <HomeButton navigation={navigation}/>,
   });
 
   componentDidMount() {

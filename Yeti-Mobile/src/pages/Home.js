@@ -19,6 +19,7 @@ import CommonStyles from '../styles';
 import PickupNotification from "../components/ticket/PickupNotification";
 import ShoppingCartButton from "../components/buttons/ShoppingCartButton";
 import OpenDrawerButton from "../components/buttons/OpenDrawerButton";
+import HomeButton from "../components/buttons/HomeButton";
 
 const { Popover } = renderers;
 
@@ -26,7 +27,7 @@ class HomeScreen extends React.Component {
   static navigationOptions = ({navigation}) => ({
     headerStyle: CommonStyles.headerStyle,
     headerTitle: <HeaderSearchBar placeholderText='Search Tickets e.g. "Stevens Tue"'/>,
-    headerLeft: <OpenDrawerButton navigation={navigation}/>,
+    headerLeft: <HomeButton navigation={navigation}/>,
     headerRight: <ShoppingCartButton navigation={navigation}/>,
   });
 
@@ -52,8 +53,6 @@ class HomeScreen extends React.Component {
         <OptionsBar />
 
         <TicketList navigation={this.props.navigation}/>
-
-        <PickupNotification navigation={this.props.navigation}/>
 
       </View>
     )

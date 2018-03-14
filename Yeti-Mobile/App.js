@@ -81,12 +81,13 @@ const getTicketStackTabBarIcon = function(tintColor) {
 };
 
 
-const mainDrawerNavigator = TabNavigator({
+const mainTabNavigator = TabNavigator({
   Tickets: {
     screen: ticketStackNav,
     navigationOptions: {
       tabBarLabel:"Tickets",
-      tabBarIcon: ({ tintColor }) => getTicketStackTabBarIcon(tintColor)
+      // tabBarIcon: ({ tintColor }) => getTicketStackTabBarIcon(tintColor)
+      tabBarIcon: ({tintColor}) => <Icon name='ticket' size={24} color={tintColor} />
     }
   },
   Cart: {
@@ -127,7 +128,7 @@ const mainDrawerNavigator = TabNavigator({
 const RootModalStack = StackNavigator(
   {
     Main: {
-      screen: mainDrawerNavigator
+      screen: mainTabNavigator
     },
     PaymentPage: {
       name: 'PaymentPage',

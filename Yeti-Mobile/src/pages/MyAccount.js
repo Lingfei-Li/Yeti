@@ -13,14 +13,14 @@ import log from "../components/log";
 import {Dropdown} from "react-native-material-dropdown";
 import OpenDrawerButton from "../components/buttons/OpenDrawerButton";
 import TicketListButton from "../components/buttons/TicketListButton";
+import HomeButton from "../components/buttons/HomeButton";
 
 
 class MyAccount extends React.Component {
   static navigationOptions = ({navigation}) => ({
     headerStyle: CommonStyles.headerStyle,
     headerTitle: <Text style={{fontWeight:'bold', fontSize: 18}}>My Account</Text>,
-    headerLeft: <OpenDrawerButton navigation={navigation}/>,
-    headerRight: <TicketListButton navigation={navigation}/>
+    headerLeft: <HomeButton navigation={navigation}/>,
   });
 
   render() {
@@ -32,10 +32,6 @@ class MyAccount extends React.Component {
         />
         <Text style={{fontSize: 20, fontColor: '#999'}}>{this.props.user.fullName}</Text>
         <Text style={{fontSize: 20, fontColor: '#999'}}>{this.props.user.userId}@</Text>
-        <Button
-          title="My Orders"
-          onPress={() => {this.props.navigation.navigate('MyOrdersStack')}}
-        />
         <Button
           title="Edit Profile"
           onPress={() => {alert('Coming soon')}}

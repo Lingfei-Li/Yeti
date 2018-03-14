@@ -11,14 +11,14 @@ import TicketListButton from '../components/buttons/TicketListButton';
 import CartItemList from "../components/shoppingCart/CartItemList";
 import log from "../components/log";
 import {Dropdown} from "react-native-material-dropdown";
+import HomeButton from "../components/buttons/HomeButton";
 
 
 class ShoppingCart extends React.Component {
   static navigationOptions = ({navigation}) => ({
     headerStyle: CommonStyles.headerStyle,
     headerTitle: <Text style={{fontWeight:'bold', fontSize: 18}}>Shopping Cart</Text>,
-    headerLeft: <OpenDrawerButton navigation={navigation}/>,
-    headerRight: <TicketListButton navigation={navigation}/>
+    headerLeft: <HomeButton navigation={navigation}/>,
   });
 
   render() {
