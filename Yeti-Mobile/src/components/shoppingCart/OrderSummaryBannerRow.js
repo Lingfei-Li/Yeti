@@ -24,21 +24,16 @@ class OrderSummaryBanner extends React.Component{
   getTotalPrice() {
     let totalPrice = 0;
     this.props.shoppingCart.forEach((item) => {
-      totalPrice += item.purchaseAmount * item.ticket.ticket_price;
+      totalPrice += item.purchase_amount * item.ticket_price;
     });
     return totalPrice;
   }
 
   placeOrder() {
     const buyer_id = "lingfeil";
-    const ticket_list = this.props.shoppingCart.map((shoppingCartItem) => {
-      return {
-        "purchase_amount": shoppingCartItem.purchaseAmount,
-        ...shoppingCartItem.ticket
-      }
-    });
+    const ordered_ticket_list = this.props.shoppingCart;
 
-    createOrder(buyer_id, ticket_list).then((response) => {
+    createOrder(buyer_id, ordered_ticket_list).then((response) => {
       setTimeout(() => {
         this.props.clearShoppingCart();
       }, 1000);
@@ -46,7 +41,8 @@ class OrderSummaryBanner extends React.Component{
       const orderId = JSON.parse(response.data).order_id;
       this.props.navigation.navigate('PaymentPage', {orderId, payingOrder: this.props.shoppingCart});
     }).catch((error) => {
-      alert("Failed to place order. Error: " + JSON.stringify(error));
+      alert("Failed to place order. Error: " + JSON.stringify(error.response.data.error));
+      console.log(JSON.stringify(error.response.data.error, null, 2));
     });
   }
 

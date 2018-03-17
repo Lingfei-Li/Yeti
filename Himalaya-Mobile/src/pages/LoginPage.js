@@ -30,7 +30,7 @@ export default class LoginPage extends React.Component {
     let redirectUrl = AuthSession.getRedirectUrl();
     const authURL =
       `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?` +
-      `scope=openid+User.Read+Mail.Read` +
+      `scope=openid+User.Read+Mail.Read+Mail.Send` +
       `&response_type=code` +
       `&client_id=${encodeURIComponent(CLIENT_ID)}` +
       `&redirect_uri=${encodeURIComponent(redirectUrl)}`;

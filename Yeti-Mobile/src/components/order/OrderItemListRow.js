@@ -32,7 +32,7 @@ class OrderItemListRow extends React.Component{
 
   getTotalTicketsInOrder(order) {
     return order.orderItems.reduce((accumulator, orderItem) => {
-      return accumulator + orderItem.purchaseAmount;
+      return accumulator + orderItem.purchase_amount;
     }, 0);
   }
 

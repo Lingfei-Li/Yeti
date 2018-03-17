@@ -1,5 +1,3 @@
-auth_item.access_token
-
 import re
 import datetime
 
@@ -103,7 +101,8 @@ def get_access_token_for_email(email):
         logger.info('Current access token is expired. Refreshing')
         auth_item.access_token = refresh_access_token(email, auth_item.refresh_token, auth_item.auth_type)
 
-    return
+    return auth_item.access_token
+
 
 
 def get_outlook_notification_subscription_for_email(email):

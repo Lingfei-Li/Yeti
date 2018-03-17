@@ -25,10 +25,10 @@ class AddToCartConfirmationBanner extends React.Component {
 
   getButtonTitle() {
     const ticketAmount = this.props.shoppingCart.reduce((accumulator, orderItem) => {
-      return accumulator + orderItem.purchaseAmount;
+      return accumulator + orderItem.purchase_amount;
     }, 0);
     const totalPrice = this.props.shoppingCart.reduce((accumulator, orderItem) => {
-      return accumulator + orderItem.purchaseAmount * orderItem.ticket.ticket_price;
+      return accumulator + orderItem.purchase_amount * orderItem.ticket_price;
     }, 0);
     return `Proceed to checkout (${ticketAmount} tickets) $${totalPrice}`;
 

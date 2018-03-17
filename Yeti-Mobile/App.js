@@ -1,5 +1,5 @@
 import {DrawerNavigator, StackNavigator, TabBarBottom, TabNavigator} from 'react-navigation'
-import {StyleSheet} from "react-native";
+import {AsyncStorage, StyleSheet} from "react-native";
 import React from 'react';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MyOrders from "./src/pages/MyOrders";
@@ -16,6 +16,9 @@ import ShoppingCart from "./src/pages/ShoppingCart";
 import configureStore from './src/store/configureStore';
 import ShoppingCartTabBarButton from "./src/components/buttons/ShoppingCartTabBarButton";
 
+
+// Wipe our all local storage for the app
+// AsyncStorage.clear();
 
 const ticketStackNav = StackNavigator(
   {

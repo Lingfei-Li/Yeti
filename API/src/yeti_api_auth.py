@@ -14,6 +14,9 @@ logger = yeti_logging.get_logger("YetiAuthApi")
 
 
 def renew_outlook_notification_subscription(event, context):
+
+    logger.info("Start")
+
     try:
         emails = event['emails']
     except Exception as e:
@@ -25,6 +28,7 @@ def renew_outlook_notification_subscription(event, context):
         logger.info("Checking outlook notification subscription for ".format(email))
         try:
             access_token = yeti_service_auth.get_access_token_for_email(email)
+            logger.info("Current access token: {}".format(access_token))
             subscription_id, subscription_expiry_datetime = yeti_service_auth.get_outlook_notification_subscription_for_email(email)
             if subscription_id is None or subscription_expiry_datetime is None:
                 logger.info('There is no subscription associated with the email. Creating a new subscription for {}'.format(email))
@@ -75,6 +79,7 @@ def outlook_oauth(event, context):
         return yeti_api_response.ok(response)
 
     except yeti_exceptions.YetiApiClientErrorException as e:
+        logger.info("Client error. Error trace: {}".format(traceback.format_exc()))
         return yeti_api_response.client_error(str(e))
 
     except (yeti_exceptions.YetiApiInternalErrorException, Exception) as e:

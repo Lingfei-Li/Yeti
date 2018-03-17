@@ -25,8 +25,9 @@ class CartItemList extends React.Component{
   _keyExtractor = (ticket, index) => ticket.ticketId;
 
   renderTicketRow = ({item}) => {
+    console.log('cart item: ' + JSON.stringify(item));
     return (
-      <CartItemListRow ticket={item.ticket} quantity={item.purchaseAmount}/>
+      <CartItemListRow ticket={item} quantity={item.purchase_amount}/>
     );
   };
 

@@ -65,13 +65,13 @@ export function clearShoppingCart() {
   };
 }
 
-export function addTicketToCart(ticket, purchaseAmount) {
+export function addTicketToCart(ticket, purchase_amount) {
   log.info('Action: addTicketToCart');
 
   return {
     type: ADD_TICKET_TO_CART,
     ticket,
-    purchaseAmount,
+    purchase_amount,
   };
 }
 

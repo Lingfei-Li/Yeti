@@ -17,6 +17,7 @@ import log from "../log";
 import {TICKET_LIST_GROUP_BY_TICKET_TYPE, TICKET_LIST_GROUP_BY_PICKUP_TIME} from '../../reducers/index'
 import RowSeparator from '../RowSeparator';
 import {Dropdown} from "react-native-material-dropdown";
+import moment from "moment";
 
 
 class CartItemListRow extends React.Component{
@@ -30,7 +31,7 @@ class CartItemListRow extends React.Component{
   componentDidUpdate(prevProps, prevState, prevContext) {
     // Due to list row reuse, must update the component state manually.
     // The props have been changed, but the states wil not change automatically
-    if(prevProps.ticket.ticketId !== this.props.ticket.ticketId) {
+    if(prevProps.ticket_id !== this.props.ticket_id) {
       if(prevProps.quantity !== this.props.quantity) {    // condition check is necessary or there'll be an infinite component update loop
         this.setState({
           quantityText: this.props.quantity.toString(),
@@ -67,7 +68,7 @@ class CartItemListRow extends React.Component{
   handleTextInputBlur(e) {
     const text = e.nativeEvent.text;
     if(text && text.length > 0 && text.trim() !== '0') {
-      this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, parseInt(text));
+      this.props.changeTicketQuantityInCart(this.props.ticket_id, parseInt(text));
       this.setState({
         quantityText: text
       });
@@ -77,7 +78,7 @@ class CartItemListRow extends React.Component{
      else {
       this.animateOpacity(0.2);
       this.animateDeleteButtonWidth(50);
-      this.props.changeTicketQuantityInCart(this.props.ticket.ticketId, 0);
+      this.props.changeTicketQuantityInCart(this.props.ticket_id, 0);
       this.setState({
         quantityText: '0'
       })
@@ -119,12 +120,37 @@ class CartItemListRow extends React.Component{
         style={{height: '100%', width: this.state.deleteButtonWidth, right: 0, position: 'absolute', justifyContent: 'center', alignItems: 'center'}}
       >
         <TouchableOpacity
-          onPress={() => this.props.deleteTicketFromCart(this.props.ticket.ticketId) }
+          onPress={() => this.props.deleteTicketFromCart(this.props.ticket_id) }
           style={{height: '100%', width: '100%', right: 0, backgroundColor: '#ff4444', opacity: 0.8,  position: 'absolute', justifyContent: 'center', alignItems: 'center'}}
         >
           {icon}
         </TouchableOpacity>
       </Animated.View>
+    )
+  }
+
+  getDistributionDateTime(startDatetimeStr, endDatetimeStr) {
+    const startDatetime = moment(startDatetimeStr);
+    const endDatetime = moment(endDatetimeStr);
+    const today = moment();
+    let dynamicDayOfWeek = '';
+    if(startDatetime.isSame(today, "day")) {
+      dynamicDayOfWeek = 'Today';
+    } else if(startDatetime.isSame(today, "week")) {
+      dynamicDayOfWeek = "This " + startDatetime.format("dddd");
+    } else {
+      dynamicDayOfWeek = startDatetime.format("dddd");
+    }
+    if(startDatetime.year() === endDatetime.year() && endDatetime.dayOfYear() === endDatetime.dayOfYear()) {
+      return (
+        <View>
+          <Text style={styles.pickupDatetimeText}>{startDatetime.format("M-D")} {dynamicDayOfWeek}</Text>
+          <Text style={styles.pickupDatetimeText}>{startDatetime.format("h:mm")} - {endDatetime.format("h:mm a")}</Text>
+        </View>
+      )
+    }
+    return (
+      <Text style={styles.pickupDatetimeText}>{startDatetime.format("M/D h:mm a")} - {endDatetime.format("M/D h:mm a")}</Text>
     )
   }
 
@@ -137,7 +163,7 @@ class CartItemListRow extends React.Component{
 
         <Animated.View style={{opacity: this.state.fadeAnim}}>
           <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginTop: 20}}>{ticket.ticket_type}</Text>
-          <Text style={{textAlign: 'center', marginTop: 10}}>{ticket.distribution_start_datetime} - {ticket.distribution_end_datetime}</Text>
+          {this.getDistributionDateTime(ticket.distribution_start_datetime, ticket.distribution_end_datetime)}
           <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 10}}>
             <Text style={{textAlign: 'center'}}>Qty: </Text>
             <TextInput
@@ -171,6 +197,11 @@ export default connect(null, mapDispatchToProps)(CartItemListRow)
 
 
 const styles = StyleSheet.create({
+  pickupDatetimeText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
   quantityDropdown: {
     width: 50,
     marginLeft: 8

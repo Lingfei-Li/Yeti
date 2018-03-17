@@ -54,17 +54,27 @@ export default function(state=defaultState, action) {
       return newState;
 
     case Actions.ADD_TICKET_TO_CART:
-      let newCartItem = {purchaseAmount: action.purchaseAmount, ticket: cloneObject(action.ticket)};
+      const ticket = action.ticket;
+      let newCartItem = {
+        purchase_amount: action.purchase_amount,
+        ticket_id: ticket.ticket_id,
+        ticket_type: ticket.ticket_type,
+        ticket_version: ticket.ticket_version,
+        distribution_start_datetime: ticket.distribution_start_datetime,
+        distribution_end_datetime: ticket.distribution_end_datetime,
+        distribution_location: ticket.distribution_location,
+        ticket_price: ticket.ticket_price
+      };
 
       for(let i = newState.shoppingCart.length - 1; i >= 0; i --) {
-        if(newState.shoppingCart[i].ticket.ticket_id === action.ticket.ticket_id) {
-          newCartItem.purchaseAmount += newState.shoppingCart[i].purchaseAmount;
+        if(newState.shoppingCart[i].ticket_id === newCartItem.ticket_id) {
+          newCartItem.purchase_amount += newState.shoppingCart[i].purchase_amount;
           newState.shoppingCart.splice(i, 1);
         }
       }
 
       newState.shoppingCart.push(newCartItem);
-      log.info(`add ${action.purchaseAmount} ${action.ticket.ticket_type} to cart`);
+      log.info(`add ${newCartItem.purchase_amount} ${newCartItem.ticket_type} to cart`);
       return newState;
 
     case Actions.CLEAR_SHOPPING_CART:
@@ -73,8 +83,8 @@ export default function(state=defaultState, action) {
 
     case Actions.CHANGE_TICKET_QUANTITY_IN_CART:
       for(let i = newState.shoppingCart.length - 1; i >= 0; i --) {
-        if(newState.shoppingCart[i].ticket.ticket_id === action.ticketId) {
-          newState.shoppingCart[i].purchaseAmount = action.quantity;
+        if(newState.shoppingCart[i].ticket_id === action.ticketId) {
+          newState.shoppingCart[i].purchase_amount = action.quantity;
         }
       }
 
@@ -83,7 +93,7 @@ export default function(state=defaultState, action) {
 
     case Actions.DELETE_TICKET_FROM_CART:
       for(let i = newState.shoppingCart.length - 1; i >= 0; i --) {
-        if(newState.shoppingCart[i].ticket.ticketId === action.ticketId) {
+        if(newState.shoppingCart[i].ticketId === action.ticketId) {
           newState.shoppingCart.splice(i, 1);
         }
       }

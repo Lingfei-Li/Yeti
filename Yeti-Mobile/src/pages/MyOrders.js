@@ -9,7 +9,6 @@ import HeaderSearchBar from "../components/order/HeaderSearchBar";
 import OpenDrawerButton from "../components/buttons/OpenDrawerButton";
 import TicketListButton from "../components/buttons/TicketListButton";
 import OrderItemList from "../components/order/OrderItemList";
-import { getMockOrders } from '../mockingData/orders'
 import {getAllOrdersForUser} from "../client/order";
 import HomeButton from "../components/buttons/HomeButton";
 
@@ -24,6 +23,7 @@ class MyOrders extends React.Component {
   componentDidMount() {
     getAllOrdersForUser().then((response) => {
       const orderList = JSON.parse(response.data);
+      console.log("Get order list: " + JSON.stringify(orderList, null, 2));
       this.props.setOrRefreshOrderList(orderList);
     }).catch((error) => {
       alert("Failed to get orders for the current user. Please retry or check your internet connection. Error: " + JSON.stringify(error));

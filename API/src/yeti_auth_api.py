@@ -29,7 +29,7 @@ def login_outlook_oauth(event, context):
 
     try:
         auth_code = body['authCode']
-        logger.debug('authCode: {}'.format(auth_code))
+        logger.info('authCode: {}'.format(auth_code))
     except KeyError:
         return api_response.client_error("Cannot read property 'authCode' from the request body. ")
 

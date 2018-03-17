@@ -11,22 +11,31 @@ import yeti_utils_common
 logger = yeti_logging.get_logger("YetiOrderService")
 
 ORDER_ID_MESSAGE_TEMPLATE = 'YetiOrder#{}#'
-ORDER_ID_MESSAGE_REGEX_PATTERN = 'YetiOrder#([0-9]{20})#'
+ORDER_ID_MESSAGE_REGEX_PATTERN = 'YetiOrder#([0-9]+)#'
 
 
 def create_order(ticket_list, buyer_id):
     # Validate order
     for ticket in ticket_list:
-        ticket_id = ticket['ticket_id']
-        purchase_amount = ticket['purchase_amount']
+        if 'ticket_id' not in ticket or 'ticket_version' not in ticket or 'ticket_type' not in ticket or 'distribution_location' not in ticket \
+                or 'distribution_start_datetime' not in ticket or 'distribution_end_datetime' not in ticket or 'purchase_amount' not in ticket:
+            raise yeti_exceptions.YetiApiClientErrorException("Missing required attributes in the ticketList for createOrder request")
+
+        ordered_ticket = yeti_models.OrderedTicket.build(ticket_id=ticket['ticket_id'], ticket_version=ticket['ticket_version'], ticket_type=ticket['ticket_type'],
+                                                         distribution_location=ticket['distribution_location'], distribution_start_datetime=ticket['distribution_start_datetime'],
+                                                         distribution_end_datetime=ticket['distribution_end_datetime'], purchase_amount=ticket['purchase_amount'])
+
+        ticket_id = ordered_ticket.ticket_id
+        purchase_amount = ordered_ticket.purchase_amount
+
+        # Availability Check
         total_ticket_amount = aws_client_dynamodb.OrderServiceTicketLocalView.get_total_ticket_amount(ticket_id)
-
         reserved_amount = get_reservation_amount(ticket_id)
-
         if purchase_amount + reserved_amount > total_ticket_amount:
             raise yeti_exceptions.YetiApiClientErrorException("Not enough tickets (id={}) available. Purchasing {}, {} reserved, {} total"
                                                               .format(ticket_id, purchase_amount, reserved_amount, total_ticket_amount))
 
+    # We don't persist ordered tickets in DDB because Lingfei don't know how (and is reluctant to learn) to deserialize the DDB JSON into the correct data structure
     order = yeti_models.Order.build(ticket_list=ticket_list,
                                     buyer_id=buyer_id,
                                     order_datetime=datetime.datetime.now().isoformat(),

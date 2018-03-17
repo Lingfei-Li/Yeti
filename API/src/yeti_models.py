@@ -256,7 +256,7 @@ class TicketStatusCode:
 class Order(YetiModel):
     order_id = None
     order_version = None
-    ticket_list = None
+    ticket_list = None  # List<OrderedTicket>
     buyer_id = None
     order_datetime = None
     expiry_datetime = None
@@ -290,14 +290,51 @@ class Order(YetiModel):
         return raw_order_id
 
 
+class OrderedTicket(YetiModel):
+    """
+    This OrderedTicket model is used only in orders. It is designed to contain only the information necessary for the pickup process.
+    The attributes of this model should contain a subset of attributes in the real Ticket model plus purchase amount and pickup status.
+    """
+    ticket_id = None
+    ticket_version = None
+    ticket_type = None
+    distribution_location = None
+    distribution_start_datetime = None
+    distribution_end_datetime = None
+    purchase_amount = None
+    pickup_status_code = None
+
+    @classmethod
+    def build(cls, ticket_id, ticket_version, ticket_type, distribution_location, distribution_start_datetime, distribution_end_datetime, purchase_amount,
+              pickup_status_code=None):
+        obj = cls()
+        obj.ticket_id = ticket_id
+        obj.ticket_version = ticket_version
+        obj.ticket_type = ticket_type
+        obj.distribution_location = distribution_location
+        obj.distribution_start_datetime = distribution_start_datetime
+        obj.distribution_end_datetime = distribution_end_datetime
+        obj.purchase_amount = purchase_amount
+        obj.pickup_status_code = pickup_status_code or OrderedTicketPickupStatusCode.not_picked_up  # Cannot put default value to parameter. PickupStatusCode is not loaded yet
+        return obj
+
+
 class OrderStatusCode:
     created = 0
-    expired = 1
+    paid = 1
     completed = 2
-    cancelled = 3
-    refund_required = 4
-    refund_completed = 5
-    other = 6
+    expired = 10
+    cancelled = 11
+    refund_requested = 20
+    refund_completed = 21
+    other = 999
+
+
+class OrderedTicketPickupStatusCode:
+    not_picked_up = 0
+    pickup_up = 1
+    returned = 10
+    other = 999
 
 
 ##############################################

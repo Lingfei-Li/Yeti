@@ -5,6 +5,9 @@ import uuid
 import json
 import yeti_exceptions
 import dateutil.parser
+import logging
+
+logger = logging.getLogger("OutlookService")
 
 # graph_endpoint = 'https://graph.microsoft.com/v1.0{0}'
 outlook_api_endpoint = 'https://outlook.office.com/api/v2.0{0}'
@@ -144,7 +147,7 @@ def get_message_for_id(message_id, access_token, user_email):
     try:
         response = r.json()
     except Exception as e:
-        raise yeti_exceptions.OutlookApiErrorException("Failed to transform response text to JSON: {}".format(e))
+        raise yeti_exceptions.OutlookApiErrorException("Failed to transform response text {} to JSON. Error: {}".format(r, e))
 
     if r.status_code != requests.codes.ok or ('error' in response and response['error']):
         if 'code' in response['error'] and response['error']['code'] == 'InvalidAuthenticationToken':
@@ -156,6 +159,8 @@ def get_message_for_id(message_id, access_token, user_email):
 
 
 def create_notification_subscription(access_token, user_email):
+    logger.info("Creating new outlook subscription for email {}. \nAccess token: {}".format(user_email, access_token))
+
     url = "https://outlook.office.com/api/v2.0/me/subscriptions"
 
     payload = {
@@ -190,6 +195,8 @@ def delete_subscription(access_token, user_email, subscription_id):
 
 
 def renew_subscription(access_token, user_email, subscription_id):
+    logger.info("Renewing outlook subscription ID {} for email {}. \nAccess token: {}".format(subscription_id, user_email, access_token))
+
     url = "https://outlook.office.com/api/v2.0/me/subscriptions/{}".format(subscription_id)
 
     payload = {

@@ -84,20 +84,20 @@ class PaymentPage extends React.Component {
 
   getTotalPrice(payingOrder) {
     return payingOrder.reduce((accumulator, singleTicketOrder) => {
-      return accumulator + parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticket_price);
+      return accumulator + parseFloat(singleTicketOrder.purchase_amount) * parseFloat(singleTicketOrder.ticket_price);
     }, 0);
   }
 
   getPriceForSingleTicketOrder(singleTicketOrder) {
-    return parseFloat(singleTicketOrder.purchaseAmount) * parseFloat(singleTicketOrder.ticket.ticket_price);
+    return parseFloat(singleTicketOrder.purchase_amount) * parseFloat(singleTicketOrder.ticket_price);
   }
 
   step1View(orderId, payingOrder) {
 
-    const orderIdString = `Yeti#${orderId}#`;
+    const orderIdString = `YetiOrder#${orderId}#`;
 
     const ticketsTextElements = payingOrder.map((singleTicketOrder) => {
-        return <Text>{singleTicketOrder.ticket.ticketType} {singleTicketOrder.purchaseAmount} * {singleTicketOrder.ticket.ticket_price} = ${this.getPriceForSingleTicketOrder(singleTicketOrder)}</Text>
+        return <Text>{singleTicketOrder.ticket_type} {singleTicketOrder.purchase_amount} * {singleTicketOrder.ticket_price} = ${this.getPriceForSingleTicketOrder(singleTicketOrder)}</Text>
     });
 
     return (

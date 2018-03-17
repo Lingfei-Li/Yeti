@@ -1,7 +1,6 @@
 
 import React from 'react'
 import {StyleSheet, Button, FlatList, Image, Navigator, Picker, Slider, Text, View, TextInput} from "react-native";
-import { getMockTickets } from '../../mockingData/ticket'
 import log from '../log';
 import TicketList from "./TicketList";
 import TicketListRow from './TicketListRow'
