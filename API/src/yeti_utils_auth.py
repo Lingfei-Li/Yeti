@@ -20,15 +20,19 @@ class OutlookAuthorizer:
     # The token issuing endpoint
     token_url = '{0}{1}'.format(authority, '/common/oauth2/v2.0/token')
 
-    # The redirect url must align with the redirect url used for signin
-    test_redirect_url = 'http://localhost:8000/tutorial/gettoken/'
-    redirect_url = 'https://auth.expo.io/@drinkiit/yeti-mobile'
+    """
+    The redirect url must align with the redirect url used for signin
+    """
+    # test_redirect_url = 'http://localhost:8000/tutorial/gettoken/'
+    redirect_url = 'http://localhost:8000/tutorial/gettoken/'
+    # redirect_url = 'https://auth.expo.io/@drinkiit/yeti-mobile'
 
     # The scopes required by the app
     scopes = ['openid',
               'offline_access',
               'https://outlook.office.com/user.read',
               'https://outlook.office.com/mail.read'
+              'https://outlook.office.com/mail.send'
               ]
 
     # Client ID and secret

@@ -18,4 +18,3 @@ for item in response['Items']:
     print(response)
 
 print("Delete {} records from db".format(total_orders))
-
