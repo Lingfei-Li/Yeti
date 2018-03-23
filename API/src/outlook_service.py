@@ -158,6 +158,39 @@ def get_message_for_id(message_id, access_token, user_email):
     return response
 
 
+def send_message(access_token, user_email, recipient_email, message_subject, message_body):
+    message = {
+        "Message": {
+            "Subject": message_subject,
+            "Body": {
+                "ContentType": "Text",
+                "Content": message_body
+            },
+            "ToRecipients": [
+                {
+                    "EmailAddress": {
+                        "Address": recipient_email
+                    }
+                }
+            ],
+            "Attachments": [
+            ]
+        },
+        "SaveToSentItems": "true"
+    }
+
+    url = 'https://outlook.office.com/api/v2.0/me/sendmail'
+
+    r = make_api_call('POST', url, access_token, user_email, message)
+
+    if r.status_code == requests.codes.ok:
+        print(r.json())
+        return r.json()
+    else:
+        print("{0}: {1}".format(r.status_code, r.text))
+        return "{0}: {1}".format(r.status_code, r.text)
+
+
 def create_notification_subscription(access_token, user_email):
     logger.info("Creating new outlook subscription for email {}. \nAccess token: {}".format(user_email, access_token))
 

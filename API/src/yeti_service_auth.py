@@ -5,6 +5,7 @@ import aws_client_dynamodb
 import outlook_service
 import yeti_logging
 import yeti_models
+import yeti_service_email
 from yeti_models import AuthVerifyResultCode
 import yeti_exceptions
 from yeti_utils_auth import OutlookAuthorizer
@@ -104,7 +105,6 @@ def get_access_token_for_email(email):
     return auth_item.access_token
 
 
-
 def get_outlook_notification_subscription_for_email(email):
     """ Get the subscription id for outlook notification subscription """
 
@@ -113,7 +113,4 @@ def get_outlook_notification_subscription_for_email(email):
     auth_item = aws_client_dynamodb.AuthServiceAuthTable.get_auth_item(email)
 
     return auth_item.outlook_notification_subscription_id, auth_item.outlook_notification_subscription_expiry_datetime
-
-
-
 

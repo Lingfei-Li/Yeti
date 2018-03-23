@@ -31,7 +31,7 @@ class OutlookAuthorizer:
     scopes = ['openid',
               'offline_access',
               'https://outlook.office.com/user.read',
-              'https://outlook.office.com/mail.read'
+              'https://outlook.office.com/mail.read',
               'https://outlook.office.com/mail.send'
               ]
 

@@ -14,8 +14,6 @@ import yeti_utils_common
 ##############################################
 # Common Models
 ##############################################
-
-
 class YetiModel:
     def __init__(self):
         # Empty constructor used by DynamoDB mapper
@@ -202,7 +200,7 @@ class Ticket(YetiModel):
     ticket_version = None
     ticket_amount = None
     ticket_type = None
-    distributor_id = None
+    distributor_email = None
     distribution_location = None
     distribution_start_datetime = None
     distribution_end_datetime = None
@@ -210,12 +208,12 @@ class Ticket(YetiModel):
     status_code = None
 
     @classmethod
-    def build(cls, ticket_amount, ticket_type, distributor_id, distribution_location, distribution_start_datetime, distribution_end_datetime,
+    def build(cls, ticket_amount, ticket_type, distributor_email, distribution_location, distribution_start_datetime, distribution_end_datetime,
               ticket_id=None, ticket_version=None, change_set=None, status_code=None):
         obj = cls()
         obj.ticket_amount = Decimal(ticket_amount)
         obj.ticket_type = ticket_type
-        obj.distributor_id = distributor_id
+        obj.distributor_email = distributor_email
         obj.distribution_location = distribution_location
         obj.distribution_start_datetime = distribution_start_datetime
         obj.distribution_end_datetime = distribution_end_datetime
@@ -234,7 +232,7 @@ class Ticket(YetiModel):
                                 ticket_version=Decimal(str(message['ticket_version'])),
                                 ticket_amount=Decimal(str(message['ticket_amount'])),
                                 ticket_type=message['ticket_type'],
-                                distributor_id=message['distributor_id'],
+                                distributor_email=message['distributor_email'],
                                 distribution_location=message['distribution_location'],
                                 distribution_start_datetime=dateutil.parser.parse(message['distribution_start_datetime']),
                                 distribution_end_datetime=dateutil.parser.parse(message['distribution_end_datetime']),
@@ -257,7 +255,7 @@ class Order(YetiModel):
     order_id = None
     order_version = None
     ticket_list = None  # List<OrderedTicket>
-    buyer_id = None
+    buyer_email = None
     order_datetime = None
     expiry_datetime = None
     payment_id_list = None
@@ -265,10 +263,10 @@ class Order(YetiModel):
     status_code = None
 
     @classmethod
-    def build(cls, ticket_list, buyer_id, order_datetime, expiry_datetime, order_id=None, order_version=None, payment_id_list=None, change_set=None, status_code=None):
+    def build(cls, ticket_list, buyer_email, order_datetime, expiry_datetime, order_id=None, order_version=None, payment_id_list=None, change_set=None, status_code=None):
         obj = cls()
         obj.ticket_list = ticket_list
-        obj.buyer_id = buyer_id
+        obj.buyer_email = buyer_email
         obj.order_datetime = order_datetime
         obj.expiry_datetime = expiry_datetime
         obj.payment_id_list = [] if payment_id_list is None else payment_id_list
@@ -408,14 +406,41 @@ class AuthVerifyResultCode:
     auth_code_invalid = 9
 
 
+##############################################
+# User Service Models
+##############################################
+class User(YetiModel):
+    email = None
+    user_type = None
+    status_code = None
+    verification_code = None
+    verification_code_expiry_datetime = None
+
+    @classmethod
+    def build(cls, email, user_type, status_code=None):
+        obj = cls()
+        obj.email = email
+        obj.user_type = user_type
+        obj.status_code = status_code or UserStatusCode.pending_verification
+        if obj.status_code == UserStatusCode.pending_verification:
+            obj.verification_code, obj.verification_code_expiry_datetime = User.gen_verification_code()
+        return obj
+
+    @classmethod
+    def gen_verification_code(cls):
+        # TODO: use mountain heights and names
+        return 8844, datetime.datetime.now() + datetime.timedelta(seconds=300)
 
 
+class UserStatusCode:
+    pending_verification = 0
+    active = 1
+    suspended = 10
+    deactivated = 20
+    other = 999
 
 
-
-
-
-
-
-
+class UserType:
+    buyer = 'buyer'
+    distributor = 'distributor'
 

@@ -46,6 +46,18 @@ class YetiApiBadEventHeadersException(YetiApiClientErrorException):
     """ Raised if the Lambda handler cannot parse the received event """
 
 
+class YetiApiBadEmailFormatException(YetiApiClientErrorException):
+    """ Raised if the user email in event body is in a bad format"""
+
+
+class YetiApiIllegalEmailAddressException(YetiApiClientErrorException):
+    """ Raised if the user email is not an acceptable address"""
+
+
+class YetiApiEmailAddressAlreadyExistsException(YetiApiClientErrorException):
+    """ Raised if the user email already exists for a create_buyer_account request"""
+
+
 class YetiPaymentAlreadyAppliedException(YetiApiClientErrorException):
     """ Raised if the payment is already applied to an order but is tried to apply to another """
 

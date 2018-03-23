@@ -3,9 +3,12 @@ import copy
 import re
 
 import aws_client_dynamodb
+import outlook_service
 import yeti_exceptions
 import yeti_logging
 import yeti_models
+import yeti_service_auth
+import yeti_service_email
 import yeti_utils_common
 
 logger = yeti_logging.get_logger("YetiOrderService")
@@ -14,7 +17,7 @@ ORDER_ID_MESSAGE_TEMPLATE = 'YetiOrder#{}#'
 ORDER_ID_MESSAGE_REGEX_PATTERN = 'YetiOrder#([0-9]+)#'
 
 
-def create_order(ticket_list, buyer_id):
+def create_order(ticket_list, buyer_email):
     # Validate order
     for ticket in ticket_list:
         if 'ticket_id' not in ticket or 'ticket_version' not in ticket or 'ticket_type' not in ticket or 'distribution_location' not in ticket \
@@ -37,7 +40,7 @@ def create_order(ticket_list, buyer_id):
 
     # We don't persist ordered tickets in DDB because Lingfei don't know how (and is reluctant to learn) to deserialize the DDB JSON into the correct data structure
     order = yeti_models.Order.build(ticket_list=ticket_list,
-                                    buyer_id=buyer_id,
+                                    buyer_email=buyer_email,
                                     order_datetime=datetime.datetime.now().isoformat(),
                                     expiry_datetime=datetime.datetime.now() + datetime.timedelta(minutes=10)
                                     )
@@ -46,29 +49,45 @@ def create_order(ticket_list, buyer_id):
     return order.order_id
 
 
-def get_orders_for_user_id(user_id):
-    return aws_client_dynamodb.OrderServiceOrderTable.get_orders_for_user_id(user_id)
+def get_orders_for_user_email(user_email):
+    return aws_client_dynamodb.OrderServiceOrderTable.get_orders_for_user_email(user_email)
 
 
 def handle_payment_notification(notification_type, data, order_id):
     if notification_type == yeti_models.PaymentSNSMessageRecordType.new_payment:
+        logger.info('Payment notification: adding a new payment')
         payment = yeti_models.Payment.from_sns_message(data)
         aws_client_dynamodb.OrderServicePaymentLocalView.put_payment_item(payment)
         logger.info("Payment inserted to local view")
         if order_id is not None:
             logger.info("Payment has an order id: {}, updating order payment details".format(order_id))
             add_payment_id_for_order(payment.payment_id, order_id)
+
+            __send_confirmation_email(order_id, payment.payment_id)
         else:
             logger.info("No order id is specified by the payment. Not attaching the payment to any order.")
     elif notification_type == yeti_models.PaymentSNSMessageRecordType.order_id_update:
+        logger.info('Payment notification type: updating order ID for an existing payment')
         if order_id is not None:
             payment_id = data['payment_id']
             logger.info("Handling order id {} update for payment id: {}".format(order_id, payment_id))
             add_payment_id_for_order(payment_id, order_id)
+
+            __send_confirmation_email(order_id, payment_id)
         else:
             logger.info("Order id is empty for the order id update message. Not attaching the payment to any order.")
     else:
         logger.info("Unknown notification type: {}".format(notification_type))
+
+
+def __send_confirmation_email(order_id, payment_id):
+    logger.info("Order updated with payment. Now sending confirmation email")
+    buyer_email = aws_client_dynamodb.OrderServiceOrderTable.get_buyer_email_for_order(order_id)
+
+    yeti_service_email.send_email_from_yeti(recipient_email=buyer_email,
+                                                   subject="[Yeti Ski Tickets] Your payment is received",
+                                                   body="Your Venmo payment (ID: {}) has been received for your order (ID: {}. BuyerId: {}).".format(payment_id, order_id,
+                                                                                                                                                     buyer_email))
 
 
 def add_payment_id_for_order(payment_id, order_id):

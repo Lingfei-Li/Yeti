@@ -24,7 +24,7 @@ def create_ticket(event, context):
         ticket = yeti_models.Ticket.build(
             ticket_amount=body['ticket_amount'],
             ticket_type=body['ticket_type'],
-            distributor_id=body['distributor_id'],
+            distributor_email=body['distributor_email'],
             distribution_location=body['distribution_location'],
             distribution_start_datetime=body['distribution_start_datetime'],
             distribution_end_datetime=body['distribution_end_datetime'],

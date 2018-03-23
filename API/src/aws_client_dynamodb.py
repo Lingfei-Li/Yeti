@@ -1,19 +1,14 @@
-import json
-
 import boto3
-import logging
-
 from boto3.dynamodb.conditions import Key, Attr
-
 import yeti_exceptions
 import yeti_logging
 import yeti_models
 
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
 
 ##############################################
-# v2.0 DynamoDB clients
+# DynamoDB clients v2
 ##############################################
+dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
 logger = yeti_logging.get_logger("YetiDynamoDB")
 
 
@@ -33,12 +28,35 @@ class DynamoDBTable:
         """
         try:
             table = dynamodb.Table(table_name)
-            table.get_item(Key=key)
-        except yeti_exceptions.DatabaseItemNotFoundError:
-            return False
+            response = table.get_item(Key=key)
         except Exception as e:
             raise yeti_exceptions.DatabaseAccessErrorException("Failed to read database {} for key: {}. Error: {}".format(table_name, key, e))
+        if 'Item' not in response or not response['Item']:
+            return False
         return True
+
+    @staticmethod
+    def get_item_or_default(table_name, key, model_cls, default_item=None):
+        """ Get the item from DynamoDB and transform it into the provided model class
+        :param table_name: the DDB table name
+        :param key: the key map to get the DDB item
+        :param model_cls: the destination model class to transform the DynamoDB item into
+        :param default_item: the object returned if the required item doesn't exist
+        :return: the model item (yeti_models.*). Transformation is done in yeti_models.YetiModel
+        """
+        try:
+            table = dynamodb.Table(table_name)
+            response = table.get_item(Key=key)
+        except Exception as e:
+            raise yeti_exceptions.DatabaseAccessErrorException("Failed to read database {} for key: {}. Error: {}".format(table_name, key, e))
+        if 'Item' not in response or not response['Item']:
+            return default_item
+
+        db_item = response['Item']
+
+        class_item = model_cls.from_dynamodb_item(db_item)
+
+        return class_item
 
     @staticmethod
     def get_item(table_name, key, model_cls):
@@ -153,11 +171,19 @@ class OrderServiceOrderTable:
     table_name = 'Yeti-OrderService-OrderTable'
 
     @classmethod
-    def get_orders_for_user_id(cls, user_id):
+    def get_buyer_email_for_order(cls, order_id):
+        logger.info("Get buyer email for order: {}".format(order_id))
+        default_order_version = 1
+        order = cls.get_order_item(order_id, default_order_version)
+        logger.info("Retrieved order: {}".format(str(order)))
+        return order.buyer_email
+
+    @classmethod
+    def get_orders_for_user_email(cls, user_email):
         order_table = dynamodb.Table(cls.table_name)
 
         response = order_table.scan(
-            FilterExpression=Attr('buyer_id').eq(user_id)
+            FilterExpression=Attr('buyer_email').eq(user_email)
         )
 
         if 'Items' in response and response['Items']:
@@ -329,18 +355,46 @@ class AuthServiceAuthTable:
         )
 
 
+##############################################
+# User Service Databases
+##############################################
+class UserServiceUserTable:
+    table_name = 'Yeti-UserService-UserTable'
 
+    @classmethod
+    def get_user_item(cls, email):
+        key = {
+            'email': email
+        }
+        item = DynamoDBTable.get_item(table_name=cls.table_name, key=key, model_cls=yeti_models.User)
+        return item
 
+    @classmethod
+    def get_nullable_user_item(cls, email):
+        key = {
+            'email': email
+        }
+        item = DynamoDBTable.get_item_or_default(table_name=cls.table_name, key=key, model_cls=yeti_models.User)
+        return item
 
+    @classmethod
+    def put_user_item(cls, user_item):
+        dynamodb_item = user_item.to_dynamodb_item()
+        DynamoDBTable.put_item(table_name=cls.table_name, item=dynamodb_item)
 
+    @classmethod
+    def is_exist(cls, email):
+        return DynamoDBTable.is_exist(table_name=cls.table_name, key={'email': email})
 
-
-
-
-
-
-
-
-
-
-
+    @classmethod
+    def update_user_item_status(cls, email, status_code):
+        table = dynamodb.Table(cls.table_name)
+        table.update_item(
+            Key={
+                'email': email
+            },
+            UpdateExpression="set status_code=:s",
+            ExpressionAttributeValues={
+                ':s': status_code
+            }
+        )

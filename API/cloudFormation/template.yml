@@ -34,7 +34,7 @@ Resources:
     Properties:
       FunctionName: Yeti-PaymentService-OutlookNotificationHandler
       Handler: yeti_api_payment.handle_outlook_notification
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         HandleOutlookNotification:
@@ -52,7 +52,7 @@ Resources:
     Properties:
       FunctionName: Yeti-PaymentService-MessageNotificationStreamProcessor
       Handler: yeti_api_payment.process_message_notification_stream
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         ProcessMessageNotificationStream:
@@ -141,7 +141,7 @@ Resources:
     Properties:
       FunctionName: Yeti-OrderService-TicketNotificationHandler
       Handler: yeti_api_order.handle_ticket_notification
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         TicketNotification:
@@ -165,7 +165,7 @@ Resources:
     Properties:
       FunctionName: Yeti-OrderService-CreateOrder
       Handler: yeti_api_order.create_order
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         CreateOrder:
@@ -182,7 +182,7 @@ Resources:
     Properties:
       FunctionName: Yeti-OrderService-GetAllOrdersForUser
       Handler: yeti_api_order.get_all_orders_for_user
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         CreateOrder:
@@ -257,7 +257,7 @@ Resources:
     Properties:
       FunctionName: Yeti-TicketService-CreateTicket
       Handler: yeti_api_ticket.create_ticket
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         CreateOrder:
@@ -275,7 +275,7 @@ Resources:
     Properties:
       FunctionName: Yeti-TicketService-GetAllTickets
       Handler: yeti_api_ticket.get_all_tickets
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         CreateOrder:
@@ -323,7 +323,7 @@ Resources:
     Properties:
       FunctionName: Yeti-AuthService-RenewOutlookNotificationSubscription
       Handler: yeti_api_auth.renew_outlook_notification_subscription
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         Sched:
@@ -343,7 +343,7 @@ Resources:
     Properties:
       FunctionName: Yeti-AuthService-OutlookOAuth
       Handler: yeti_api_auth.outlook_oauth
-      Timeout: 10
+      Timeout: 60
       Runtime: python3.6
       Events:
         OutlookOAuthLogin:
@@ -371,3 +371,39 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
+  ##########################
+  # User Service
+  ##########################
+  ##### Lambda #####
+  YetiUserServiceCreateBuyerAccount:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Yeti-UserService-CreateBuyerAccount
+      Handler: yeti_api_user.create_buyer_account
+      Timeout: 60
+      Runtime: python3.6
+      Events:
+        CreateBuyerAccount:
+          Type: Api
+          Properties:
+            Path: /user/create-buyer-account
+            Method: post
+            RestApiId:
+              Ref: ProjectYetiApi
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  ##### DynamoDB #####
+  YetiUserServiceUserTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Yeti-UserService-UserTable
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5

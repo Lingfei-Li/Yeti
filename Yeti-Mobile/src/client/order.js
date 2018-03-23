@@ -13,7 +13,7 @@ function concatUrl(path) {
   return api_endpoint + path;
 };
 
-export const createOrder = function(buyer_id, ticket_list) {
+export const createOrder = function(buyer_email, ticket_list) {
   return(
     axios({
       method: 'POST',
@@ -22,7 +22,7 @@ export const createOrder = function(buyer_id, ticket_list) {
         "content-type": "application/json",
       },
       data: {
-        buyer_id,
+        buyer_email,
         ticket_list
       },
       timeout: connectionTimeoutMs,
@@ -37,7 +37,7 @@ export const getAllOrdersForUser = function() {
       url: api_endpoint,
       headers: {
         "content-type": "application/json",
-        "user_id": "lingfeil" //TODO: use real user id
+        "user_email": "lingfeil@amazon.com"
       },
       timeout: connectionTimeoutMs,
     })

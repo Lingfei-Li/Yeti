@@ -30,10 +30,10 @@ class OrderSummaryBanner extends React.Component{
   }
 
   placeOrder() {
-    const buyer_id = "lingfeil";
+    const buyer_email = "lingfeil@amazon.com";
     const ordered_ticket_list = this.props.shoppingCart;
 
-    createOrder(buyer_id, ordered_ticket_list).then((response) => {
+    createOrder(buyer_email, ordered_ticket_list).then((response) => {
       setTimeout(() => {
         this.props.clearShoppingCart();
       }, 1000);

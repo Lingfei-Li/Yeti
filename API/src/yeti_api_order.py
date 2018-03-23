@@ -52,9 +52,9 @@ def get_all_orders_for_user(event, context):
     try:
         # TODO: Auth
         headers = yeti_utils_lambda_handler.get_headers(event)
-        user_id = headers['user_id']
+        user_email = headers['user_email']
 
-        orders = yeti_service_order.get_orders_for_user_id(user_id)
+        orders = yeti_service_order.get_orders_for_user_email(user_email)
 
         return yeti_api_response.ok(orders)
 
@@ -76,11 +76,11 @@ def create_order(event, context):
 
         # Other attributes (order id, order version, order datetime, expiry) will be inserted by the backend service.
         ticket_list = body['ticket_list']
-        buyer_id = body['buyer_id']
+        buyer_email = body['buyer_email']
 
-        logger.info("Received an order: ticket list: {}, buyer_id: {}".format(ticket_list, buyer_id))
+        logger.info("Received an order: ticket list: {}, buyer_email: {}".format(ticket_list, buyer_email))
 
-        order_id = yeti_service_order.create_order(ticket_list, buyer_id)
+        order_id = yeti_service_order.create_order(ticket_list, buyer_email)
 
         return yeti_api_response.ok({'order_id': order_id})
 

@@ -11,7 +11,7 @@ import uuid
 import json
 
 outlook_api_endpoint = 'https://outlook.office.com/api/v2.0{0}'
-my_token = 'EwAQA+l3BAAUWm1xSeJRIJK6txKjBez4GzapzqMAARWOYMnkuK+zpcKsdn8hm7i2Zv35Zx1DHK9n12Upb4zv10H0HEuXUBnkvZqrFHVP6yV0EYXP9DyyB3f0Gkl9zyowoaJxduKEtUlDTNka2GTyDlsS0/GyT0bxszux9X6ffsPHdBkK+6/Fp/m+LFN9IpX9S1WDz10zC7GWjn4/Ji1AUAccFwHqN6rpQlQLEIpFa50TW0m60K6rMMo493bZABkkhjTe/BTpo1PRWW8P/dAGJIOAKb32Of4NG0ZgF7Vh5tZ3ETAIO3e5zlPpcgI6MP4S0Rk/+uYit1DeSmQ6Wo7fOeZpAc9UjjnG+XbYC1uWbKAQwbcC1UtrcxWC86n3YL8DZgAACH/wwWCNnwu54AGZl9Tq56beOikxRnCcGRJ8+1IR9pycq097lE/rbtULldhYLx6g6XlLQ+D1CPa1/b4iviV1i4fBVgdGlzUP2zWXboPFSbuL+fM/ZYFRqau6V8d6xOe3u63tiMAXCMugXhNWJF9/elWGv/ND4gE3ycVn0C5cfya+0ctjKRxLhKuEnijYstIJNSuMXnfrX7qPTajXFZ6Bd0fbKw/Sdk0Ze0ekrOhno66wkIxDkBievEJrRGqcj0LIknVA5nYXj/muzE62VPKxC99KALJdjDN3FjDkKeTAHpY7djotEPJjvhtaMObX3cUXnRk/sL6xaYEblg1lpA81aUb5vQ+ePOLyj9etn6cXMLJj7sunIh+cEcAxwOghVlNkFLAP26GwEmQPL68VqLRIkOXGgrBqFSzQ9dK7qxiiXYsxCPepy8JStNNgNrswytNjmBYLke1+zC5FELM7W3DORsOvq0lb6d5EzUi4BeoHyg8b3qkpDjyld9CXg6TQsJgdThixFNaGxWvZ8m6E6AwcJNbyI2zT/G1sI6QXZntqskrxjYSvULB5dS76n8LGGd0T6RmGXRRzUpZGTN10Fhep1kjIql3sVOrWY+amCrmn6edf31jUi9PvnUN2jEdnRmuZhBVnORtc8vsL0nQUAg=='
+my_token = 'EwAYA+l3BAAUWm1xSeJRIJK6txKjBez4GzapzqMAAXy5FYoxqemCbO/0/U/qp+MNv1WXwnKBFHGltp7VJ/ro9o0NHkINV2pejEXLz0AdAOWfjAnLigRsNAAqhnw4aotB1K3pXwGhtUaLrMBoUACMC8W2RoVvTToKxjvDvQWZ/V2NHYpLfZBsrJiF+mrmVSSAbauxStYcH7/MxyiYdw/5c3+gEtgTFjsX7C2HbGSOdPnKE6wyinjVqoGoUvcyqs1nv/u+/sBRxHw/u+3shqlCueI+1v1UYlfzWtqXHbx5vlj+poH26pBcui73FnZfbpHJBvHoDfI0alotSpF4oh3OHlwiTa6B2Vv/XLzHNdmJKiox524E6HTNIHkdxClkUzwDZgAACIxsMu5PjHuU6AFDxt3fF7kQcie8M9zkznGhf3HMMxJ+BxPJ0Zu1x5MEbe1ZiHMTwvfCwyMW5JeBI15WD0qpGnJdhfom2ABWP0/+rbbSzxcbowZls+R4Nim87LxNx2qSacQr5Ok14fZo2MbZu2UWWlFXZYC8jZSVr6wkO8EcZQi1Nbd6sGe2bAVynT6l/oFWfMcwugrteJCQhwNUA4LQqY6rn2Umzo4qa3xhDqW8QLP9WQZRk6KU763rIJIAKybrM+5GB00+HkEV44r4nIe6DUMV1AYOfDSK3BDBg2z3GFCgSr8E8NbgvGxbyfFm0BUYt0ywy+F2goa61NWal8IikVjoe+q37oA83cu598x5CNjgijDgXxag7S6eNlxUzl68RTfjvtKATSA6ej7uzwOjA+EVO6OEQgZTdxN+EtZtK9rS0eX+SXBJDuIYLZ6R6jMeH+Jri3sUxFvL6DAPqA1XhM6AWEUKwmpAfKCfyngeW3n4QGBVstdbZbupK1MjLh4L3Xm0RKKs56z/R1cWzZ5rGqNjvMYqN+QyEyO+coBWN1LpWJouK9DoUYAEA3Vl3vela1DWyvQOoKQTDsbAL2Uy/T0S3JPdW39wIc8nGLce+oLbj3hlcVf/A9+H4Y7cCf2A8XMkFFeKt8NXei8obbTBJjjnohwC'
 my_email = "yeti-dev@outlook.com"
 # my_subscription_id = 'RDhFMkQ2RDMtRkMzOS00QTQ3LTg2RjYtMjNDODE2RUFFMUFFXzAwMDM0MDAxLTA4ODQtQTM3NS0wMDAwLTAwMDAwMDAwMDAwMA=='
 my_subscription_id = 'RDk5NDk3MzItQTgyQy00RjE0LTk5RDctQzM0RjNEMDkxNzgxXzAwMDM0MDAxLTA4ODQtQTM3NS0wMDAwLTAwMDAwMDAwMDAwMA=='
@@ -50,23 +50,18 @@ def make_api_call(method, url, token, user_email, payload=None, parameters=None)
     return response
 
 
-def send_message_to_recipient(recipient_email_address):
+def send_message_to_recipient(recipient_email_address, message_subject="Testing", message_body="Testing message"):
     message = {
         "Message": {
-            "Subject": "Meet for lunch?",
+            "Subject": message_subject,
             "Body": {
                 "ContentType": "Text",
-                "Content": "This is an automated email from yeti!"
+                "Content": message_body
             },
             "ToRecipients": [
                 {
                     "EmailAddress": {
-                        "Address": "lzexi@amazon.com"
-                    }
-                },
-                {
-                    "EmailAddress": {
-                        "Address": "cslilingfei@outlook.com"
+                        "Address": recipient_email_address
                     }
                 }
             ],

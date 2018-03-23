@@ -2,9 +2,11 @@ from decimal import Decimal
 
 import aws_client_dynamodb
 import dateutil.parser
+import outlook_service
 
 import yeti_exceptions
 import yeti_logging
+import yeti_service_auth
 import yeti_utils_email
 from yeti_models import Payment
 
@@ -83,6 +85,15 @@ def extract_payment_from_email(email):
                                  comments=[comments])
     return payment_item, order_id
 
+
+def send_email_from_yeti(recipient_email, subject, body):
+    yeti_messenger_email = 'yeti-dev@outlook.com'
+    yeti_messenger_access_token = yeti_service_auth.get_access_token_for_email(yeti_messenger_email)
+    outlook_service.send_message(access_token=yeti_messenger_access_token,
+                                 user_email=yeti_messenger_email,
+                                 recipient_email=recipient_email,
+                                 message_subject=subject,
+                                 message_body=body)
 
 
 
